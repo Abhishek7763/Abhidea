@@ -3,6 +3,7 @@ import Link from "next/link";
 
 import { getTableOfContents } from "./document-schema";
 import { ReaderControls } from "./reader-controls";
+import { ReaderExperience } from "./reader-experience";
 import { resolveReaderFixtureMedia, type ReaderFixture } from "./reader-fixtures";
 import { StructuredDocumentRenderer } from "./structured-document-renderer";
 
@@ -95,6 +96,7 @@ export function ReaderView({ entry }: ReaderViewProps) {
               </Link>
             </aside>
             <ReaderControls locale={entry.locale} />
+            <ReaderExperience locale={entry.locale} title={entry.title} />
           </div>
         </div>
       </header>

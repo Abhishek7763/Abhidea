@@ -1,0 +1,135 @@
+body {
+  font-family: var(--font-ui), var(--font-devanagari-sans), system-ui, sans-serif;
+  font-size: 1rem;
+  line-height: 1.6;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+
+:lang(hi) {
+  font-family: var(--font-devanagari-sans), var(--font-ui), system-ui, sans-serif;
+}
+
+.text-display {
+  font-size: clamp(2.5rem, 7vw, 5.5rem);
+  line-height: 0.98;
+  letter-spacing: -0.045em;
+  font-weight: 650;
+}
+
+.text-title {
+  font-size: clamp(2rem, 5vw, 4rem);
+  line-height: 1.05;
+  letter-spacing: -0.035em;
+  font-weight: 650;
+}
+
+.text-heading-2 {
+  font-size: clamp(1.6rem, 3vw, 2.4rem);
+  line-height: 1.15;
+  letter-spacing: -0.025em;
+  font-weight: 650;
+}
+
+.text-heading-3 {
+  font-size: clamp(1.25rem, 2vw, 1.65rem);
+  line-height: 1.25;
+  letter-spacing: -0.015em;
+  font-weight: 650;
+}
+
+.text-lead {
+  font-size: clamp(1.12rem, 2vw, 1.35rem);
+  line-height: 1.65;
+  color: var(--text-secondary);
+}
+
+.text-meta {
+  font-size: 0.8125rem;
+  line-height: 1.4;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+
+.reader-prose {
+  width: min(100%, var(--reader-width));
+  margin-inline: auto;
+  color: var(--reader-text);
+  font-family: var(--font-reader-latin), Georgia, serif;
+  font-size: clamp(1.08rem, 1.5vw, 1.2rem);
+  line-height: 1.78;
+  text-wrap: pretty;
+}
+
+.reader-prose:lang(hi),
+.reader-prose [lang="hi"] {
+  font-family: var(--font-devanagari-serif), serif;
+  font-size: clamp(1.1rem, 1.6vw, 1.22rem);
+  line-height: 1.9;
+  letter-spacing: 0;
+}
+
+.reader-prose h1,
+.reader-prose h2,
+.reader-prose h3 {
+  color: var(--reader-text);
+  text-wrap: balance;
+}
+
+.reader-prose h2 {
+  margin-block: 2.75em 0.75em;
+  font-family: var(--font-ui), var(--font-devanagari-sans), system-ui, sans-serif;
+  font-size: clamp(1.55rem, 3vw, 2.15rem);
+  line-height: 1.2;
+  letter-spacing: -0.025em;
+}
+
+.reader-prose [lang="hi"] h2,
+.reader-prose h2:lang(hi) {
+  font-family: var(--font-devanagari-sans), sans-serif;
+  letter-spacing: 0;
+  line-height: 1.35;
+}
+
+.reader-prose p,
+.reader-prose ul,
+.reader-prose ol,
+.reader-prose blockquote {
+  margin-block: 0 1.35em;
+}
+
+.reader-prose a {
+  color: var(--reader-link);
+  text-decoration-line: underline;
+  text-decoration-thickness: 0.08em;
+  text-underline-offset: 0.15em;
+}
+
+.reader-prose blockquote {
+  border-inline-start: 3px solid var(--accent);
+  padding-inline-start: 1.25rem;
+  color: var(--reader-text-secondary);
+  font-style: italic;
+}
+
+.reader-caption {
+  font-family: var(--font-ui), var(--font-devanagari-sans), system-ui, sans-serif;
+  font-size: 0.825rem;
+  line-height: 1.55;
+  color: var(--reader-text-secondary);
+}
+
+@media (max-width: 40rem) {
+  .reader-prose {
+    font-size: 1.075rem;
+    line-height: 1.75;
+  }
+
+  .reader-prose:lang(hi),
+  .reader-prose [lang="hi"] {
+    font-size: 1.1rem;
+    line-height: 1.88;
+  }
+}

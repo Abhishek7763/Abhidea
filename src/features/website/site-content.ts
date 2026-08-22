@@ -26,6 +26,45 @@ export const subjects = [
   { slug: "personal-growth", label: "Personal Growth" },
 ] as const;
 
+export const readerPreviewItems = [
+  {
+    contentTypeSlug: "article",
+    contentType: "Article",
+    locale: "English",
+    title: "Attention Is a Skill You Can Train",
+    summary: "A practical guide to protecting attention, reducing mental switching and building calmer reading habits.",
+    readingTime: "10 min read",
+    href: "/en/read/attention-is-a-skill-demo",
+  },
+  {
+    contentTypeSlug: "article",
+    contentType: "Article",
+    locale: "हिन्दी",
+    title: "ध्यान एक कौशल है जिसे आप प्रशिक्षित कर सकते हैं",
+    summary: "ध्यान को बचाने, मानसिक स्विचिंग कम करने और पढ़ने-सीखने का शांत तरीका बनाने की व्यावहारिक मार्गदर्शिका।",
+    readingTime: "10 मिनट",
+    href: "/hi/read/dhyan-ek-kaushal-hai-demo",
+  },
+  {
+    contentTypeSlug: "book-summary",
+    contentType: "Book Summary",
+    locale: "English",
+    title: "Atomic Habits — Book Summary",
+    summary: "A structured Reader summary of James Clear’s framework for making small behaviours repeatable and durable.",
+    readingTime: "12 min read",
+    href: "/en/read/atomic-habits-summary-demo",
+  },
+  {
+    contentTypeSlug: "book-summary",
+    contentType: "Book Summary",
+    locale: "हिन्दी",
+    title: "Atomic Habits — पुस्तक सारांश",
+    summary: "छोटे व्यवहारिक बदलावों को आसान, दोहराने योग्य और टिकाऊ बनाने वाले ढाँचे का हिन्दी Reader सारांश।",
+    readingTime: "12 मिनट",
+    href: "/hi/read/atomic-habits-saar-demo",
+  },
+] as const;
+
 export const creatorProfile = {
   name: "Abhishek Kumar Bhardwaj",
   shortName: "Abhishek",

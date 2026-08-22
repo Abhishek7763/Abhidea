@@ -1,15 +1,17 @@
 # ABHIDEA — Phase 6 Gate Status
 
 Date: 22 August 2026
-Status: HOTFIX VERIFICATION IN PROGRESS
+Status: PASS
 
-Phase 5/6 implementation completed and passed the integration PR verification gate:
+Phase 5/6 implementation completed and passed the integration and production verification gates.
+
+Verified release baseline:
 - dependency install: PASS
 - lint: PASS
 - strict typecheck: PASS
 - production build: PASS
-
-The milestone was promoted to `staging` and then to production `main` as Release v0.2.
+- Public shell released as v0.2
+- Reader HTTP semantics hotfix released as v0.2.1
 
 Production smoke testing confirmed:
 - `/` — 200 OK
@@ -17,13 +19,9 @@ Production smoke testing confirmed:
 - `/about` — 200 OK
 - `/search` — 200 OK and `noindex`
 - `/studio` — 200 OK and `noindex, nofollow, nocache`
+- missing `/en/read/<slug>` — real HTTP 404 and `noindex`
 
-A final smoke test found one HTTP semantics issue on missing Reader URLs. `notFound()` was correctly rendered and `noindex` was injected, but the top-level Public `loading.tsx` Suspense boundary caused the streamed HTTP response to remain 200. Next.js documents this behavior for streamed not-found responses.
-
-Hotfix direction:
-- remove the broad `(public)/loading.tsx` streaming boundary
-- preserve true HTTP 404 semantics for unpublished/missing Reader slugs
-- introduce future loading states at more granular component/route boundaries where they cannot mask resource-existence status
+The broad `(public)/loading.tsx` boundary was removed after production smoke testing showed that streamed `notFound()` responses could retain HTTP 200. Loading UI must instead be introduced at granular boundaries that do not mask resource-existence status.
 
 Gate checklist:
 - [x] header/navigation implemented
@@ -39,6 +37,6 @@ Gate checklist:
 - [x] strict typecheck passes in PR CI
 - [x] production build passes in PR CI
 - [x] production public-route smoke test
-- [ ] Reader missing-slug returns real HTTP 404 after hotfix deployment
+- [x] Reader missing-slug returns real HTTP 404 after v0.2.1 hotfix deployment
 
-Final Phase 6 status becomes PASS after the Reader HTTP-status hotfix passes CI and production smoke verification.
+Phase 6 is closed. Phase 7 may build the Signature Reader Core on this stable public baseline.

@@ -12,6 +12,10 @@ function getTheme(): ThemeMode {
   return saved === "light" || saved === "dark" ? saved : "system";
 }
 
+function getServerTheme(): ThemeMode {
+  return "system";
+}
+
 function subscribe(listener: Listener) {
   listeners.add(listener);
   const onStorage = (event: StorageEvent) => {
@@ -59,7 +63,7 @@ function ThemeIcon({ mode }: { mode: ThemeMode }) {
 }
 
 export function ThemeToggle() {
-  const theme = useSyncExternalStore(subscribe, getTheme, () => "system");
+  const theme = useSyncExternalStore(subscribe, getTheme, getServerTheme);
   const next = nextTheme[theme];
 
   return (

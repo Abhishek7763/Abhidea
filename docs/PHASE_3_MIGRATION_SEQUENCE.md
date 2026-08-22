@@ -1,91 +1,65 @@
 # ABHIDEA Phase 3 — Migration Sequence
 
-Status: Planned — no migrations applied yet
+Status: Normalized after security review — no migrations applied yet
 Date: 2026-08-22
 
 ## Purpose
 
-Define a reviewable, reversible order for creating the ABHIDEA V1 schema without mixing design iteration with production DDL.
+Create ABHIDEA V1 schema in a reviewable order without mixing design iteration with production DDL. The connected project is currently additive-only: no ABHIDEA public application tables exist.
 
-The connected Supabase project is currently empty of ABHIDEA application tables, so the first migration is additive. No DROP of historical application tables is required.
+## Rules
 
-## General migration rules
+- migration SQL is committed before application
+- no secrets in Git
+- explicit GRANT + RLS ship together
+- failure stops the sequence
+- no destructive legacy DROP is required
+- advisor/readback verification follows application
+- Public always reads the published snapshot, never working content rows
 
-- migration files are created in Git before application
-- each migration has one clear responsibility
-- migrations are forward-only once applied to the connected project
-- no secret values are committed
-- all exposed objects use explicit grants
-- RLS and grants ship together for each exposed table family
-- migration application is followed by security + performance advisors
-- failure stops the sequence; do not keep applying later migrations over a failed base
-- no migration is considered complete until readback verifies the expected schema/policies
+## M00 — read-only preflight
 
-## M00 — preflight / project safety
+Confirm:
 
-Read-only checks before DDL:
-
-- confirm target project ref is `zdsanovvmmwfiqjjnxhr`
-- confirm PostgreSQL major is 17
-- inventory current public tables
-- inventory Auth user count
-- inventory Storage buckets/objects
-- inventory existing policies/functions
+- project ref `zdsanovvmmwfiqjjnxhr`
+- PostgreSQL 17
+- current public table inventory
+- Auth user count
+- Storage inventory
+- policies/functions/default privileges
 - security advisor
 - performance advisor
 
-Expected current state at blueprint time:
+Abort if unexpected real application data appears before migration review completes.
 
-- public application tables: 0
-- security advisor: clean
-- performance advisor: clean
+## M01 — safe defaults / private boundary
 
-Abort if unexpected application data appears before migration review is complete.
-
-## M01 — privilege hardening and private schema
-
-Purpose: create safe defaults before domain objects.
-
-Planned work:
-
-- create `private` schema if absent
-- revoke default table/function/sequence grants in `public` from browser roles/service role as defined in the approved RLS matrix
+- create non-exposed `private` schema if absent
+- revoke default public-schema table/function/sequence grants from browser roles/service role according to approved matrix
 - revoke default function EXECUTE from `PUBLIC`
-- grant nothing broadly to `private`
-- retain Supabase-managed schemas/settings untouched
+- leave Supabase-managed `auth`/`storage` schemas intact
 
-No application data created.
-
-Verification:
-
-- inspect `pg_default_acl`
-- confirm `private` is not an exposed Data API schema
+Verify `pg_default_acl` and Data API exposed-schema configuration assumptions.
 
 ## M02 — Admin authorization base
 
 Create:
 
-- `public.admin_members`
-- indexes/constraints including maximum one active Owner
-- updated-at trigger helper if needed
+- `admin_members`
+- partial unique index for maximum one active Owner
+- updated-at helper if required
 - `private.current_admin_role()`
 
-Security:
+Apply:
 
-- RLS enabled immediately
-- self-read + Owner membership policies only
-- ordinary membership CRUD cannot create/transfer Owner
-- revoke broad function EXECUTE; grant only required helper execution
+- self-read + Owner membership policies
+- Owner can manage Admin rows only
+- no general Owner creation/transfer
+- explicit helper function privileges
 
-No Owner row seeded yet because Auth currently has no bootstrap user.
+No Owner row is fabricated while Auth has no verified bootstrap user.
 
-Verification:
-
-- unauthenticated read denied
-- authenticated user without membership denied Admin authority
-- helper returns null for non-member
-
-## M03 — content types + taxonomy
+## M03 — Content Type + taxonomy dictionaries
 
 Create:
 
@@ -94,15 +68,9 @@ Create:
 - `topics`
 - `tags`
 
-Add:
+Add explicit public-safe SELECT and Admin write policies.
 
-- constraints
-- indexes
-- explicit grants
-- public active-row SELECT policies
-- Admin manage policies
-
-Seed initial Content Types only after table/policy creation:
+Seed idempotently:
 
 1. Article
 2. Book Summary
@@ -113,11 +81,9 @@ Seed initial Content Types only after table/policy creation:
 7. Guide
 8. Video Insight
 
-Seed operations must be idempotent.
+## M04 — working content identity
 
-## M04 — stable content identity
-
-Create:
+Create Admin-only:
 
 - `contents`
 - `content_localizations`
@@ -125,97 +91,81 @@ Create:
 
 Add:
 
-- stable UUID identities
-- locale constraint `en|hi`
-- unique localization per content/locale
-- draft structured-document checks
+- UUID stable identities
+- locale `en|hi`
+- unique content/locale
+- structured document validation baseline
 - optimistic `lock_version`
-- Trash lifecycle metadata
-- relevant FK indexes
-- RLS/grants
+- Trash metadata
+- actor attribution checks
+- FK/RLS indexes
 
-Verification scenarios:
+Do not create a cross-table unique draft slug constraint. Draft conflicts are preflight concerns; live uniqueness belongs to publication.
 
-- Admin can create content identity + locale + draft
-- anon cannot see localization/draft
-- authenticated non-Admin cannot create
+## M05 — working metadata relationships
 
-## M05 — immutable revisions + live publication snapshot
-
-Create:
-
-- `content_revisions`
-- `published_localizations`
-
-Add:
-
-- unique revision number per localization
-- unique live `(locale, slug)`
-- public `publication_state='published'` policy
-- no ordinary UPDATE/DELETE on revisions
-- live snapshot indexes
-
-At this stage, publication transaction implementation can be drafted but autonomous public publishing is not enabled without the controlled workflow.
-
-Verification:
-
-- anon cannot query revisions
-- anon sees only published snapshots
-- archived snapshot is not public
-
-## M06 — taxonomy relationships
-
-Create:
+Create Admin-only:
 
 - `content_subjects`
 - `content_topics`
 - `content_tags`
 
-Add composite PKs, FK indexes and policies.
+Composite PKs prevent duplicates. No anonymous relationship policy exists.
 
-Anonymous relationship visibility requires linked content with at least one live edition.
+These are editing-state relationships only. Publish resolves public-safe values into the live snapshot.
 
-## M07 — sources
+## M06 — source library / working citations
 
-Create:
+Create Admin-only:
 
 - `sources`
 - `content_sources`
 
-Security split:
+No public Source table/page in V1. Publication resolves safe ordered citation data into `published_localizations.sources_json`.
 
-- public can read only `sources.is_public = true`
-- working content-source relationships remain Admin-only
-- no private editorial notes stored in publicly readable source rows
-
-## M08 — media registry / usage
+## M07 — revisions + live snapshot
 
 Create:
+
+- `content_revisions` (Admin-readable, immutable)
+- `published_localizations` (public live snapshot)
+
+Live snapshot includes:
+
+- content/revision/localization identity
+- `content_type_id`
+- locale/slug/title/summary/body/SEO
+- resolved `subjects_json`
+- resolved `topics_json`
+- resolved `tags_json`
+- resolved `sources_json`
+- publication state/timestamps
+
+Constraints:
+
+- unique revision number per localization
+- unique live/reserved `(locale, slug)`
+
+Public reads only `publication_state='published'`.
+
+## M08 — media registry
+
+Create Admin working model:
 
 - `media_assets`
 - `media_usages`
 
-Do not create Storage buckets in this migration yet.
+Public metadata access, if needed by Media Service/Public Reader, is limited to assets whose `public_storage_key` is non-null.
 
-Policies:
-
-- anon reads only public media metadata
-- private metadata/usage is Admin-only
-- destructive DB deletion is not broadly granted
+No draft object is public merely because its DB metadata exists.
 
 ## M09 — private learning notes
 
-Create:
+Create `private_learning_notes` with Admin-only grants/RLS.
 
-- `private_learning_notes`
+Explicitly test anon and authenticated non-Admin denial.
 
-No anon grants.
-
-Admin-only RLS.
-
-Explicitly verify it cannot be reached by public roles.
-
-## M10 — website control
+## M10 — Website control
 
 Create:
 
@@ -224,139 +174,139 @@ Create:
 - `social_links`
 - `homepage_modules`
 
-Seed safe singleton/default rows only where useful.
+Public read rules:
 
-Public policies:
+- safe singleton settings/profile
+- visible social links
+- enabled homepage modules
 
-- safe site settings
-- About profile
-- visible social links only
-- enabled homepage modules only
+Admin writes; no arbitrary script/HTML page-builder fields.
 
-Admin policies allow controlled editing.
-
-No arbitrary HTML/script fields.
-
-## M11 — redirects + activity log
+## M11 — redirects + activity
 
 Create:
 
 - `redirects`
 - `activity_log`
 
-Redirects:
+Redirects are public-safe when active; normal use deactivates instead of deleting.
 
-- public reads active mappings
-- writes Admin/workflow controlled
-- no hard delete required for normal use
+Activity is append-only, Admin-readable and not directly forgeable by ordinary authenticated clients.
 
-Activity:
-
-- append-only
-- no public read
-- Admin read
-- ordinary authenticated users cannot forge direct activity entries
-
-## M12 — Storage buckets + Storage RLS
+## M12 — Storage boundary
 
 Create/configure:
 
 ### `media-private`
-
-- private bucket
-- Admin read/upload
-- controlled update/delete
-- MIME/file-size policy foundation
+Private staged Admin uploads.
 
 ### `media-public`
+Public published/approved optimized variants only.
 
-- public delivery bucket
-- no public write
-- write only via Admin/Media workflow
-- contains published/approved variants only
+Add Storage policies so anon/non-Admin cannot write either bucket and cannot read private objects.
 
-Before enabling public delivery, verify a draft upload remains unavailable from an unauthenticated request.
+Verify a never-published draft upload has no public delivery URL.
 
-## M13 — publication transaction
+## M13 — controlled publish transaction
 
-Implement the controlled publication operation after table policies are stable.
+Implement only after base RLS tests pass.
 
-Transaction requirements:
+Transaction:
 
 1. active Admin check
-2. expected draft version check
-3. structured document/preflight validation boundary
-4. next revision number allocation
-5. immutable revision insert
-6. live snapshot upsert
-7. public source/media synchronization
-8. old-slug redirect when necessary
-9. activity append
+2. expected draft `lock_version`
+3. preflight hard blockers
+4. resolve working Content Type/taxonomy/source values into public-safe snapshot
+5. create immutable revision
+6. upsert `published_localizations`
+7. promote/resolve approved public media
+8. redirect old live slug if changed
+9. append activity
 10. commit
 
-Preferred security direction:
+Prefer `SECURITY INVOKER`. Any necessary definer helper follows the private-schema security rules and never trusts caller-selected identity.
 
-- transaction runs in trusted server/RPC context
-- use `SECURITY INVOKER` where feasible
-- if a narrowly scoped `SECURITY DEFINER` helper is necessary, it follows the private-schema rules from the RLS matrix
-- no service secret sent to browser
+Cache invalidation/public verification happens after DB commit and is reported separately.
 
-## M14 — seed and bootstrap readiness
+## M14 — controlled Trash/unpublish
 
-Seed only V1-safe application defaults:
+Implement a transaction that:
+
+1. verifies Admin
+2. marks content trashed/archive state as requested
+3. archives every live `published_localizations` row for that content
+4. appends activity
+5. commits
+6. invalidates public cache after commit
+
+This prevents a Trash row from remaining live accidentally.
+
+Permanent delete is a distinct Owner-only dependency-checked workflow.
+
+## M15 — safe default seed
+
+Seed only confirmed V1 defaults:
 
 - Content Types
-- basic site identity: ABHIDEA / Read • Learn • Think • Grow
-- default homepage module configuration where confirmed
+- ABHIDEA brand identity
+- Read • Learn • Think • Grow
+- approved singleton/default website records
 
-Do not seed fake analytics, fake content, fake popularity or social proof.
+No fake content, metrics, trending or social proof.
 
-Owner membership is not fabricated. It is created only after a real Supabase Auth user exists and the bootstrap identity has been explicitly verified.
+Owner membership is created only after a real verified Auth user exists.
 
-## M15 — database security test suite
+## M16 — repeatable security tests
 
-Before Phase 3 schema acceptance, execute test scenarios for:
+Required allow/deny tests:
 
-- anon published read
-- anon draft denial
-- anon revision denial
-- anon private-note denial
-- hidden social-link denial
-- private media denial
-- authenticated non-Admin denial
-- Admin content CRUD
-- Admin revision immutability
-- Admin cannot create/promote Owner
-- Owner Admin-management path
-- service key absent from browser/client configuration
+### anon
+- live EN/HI snapshot readable
+- working content/draft/revision/source/note/Admin data denied
+- archived publication denied
+- hidden link denied
+- private media denied
+- editorial writes denied
 
-Where practical, encode repeatable SQL/pgTAP tests rather than relying only on manual checks.
+### authenticated non-Admin
+- no Studio authority
+- no membership/content mutation
 
-## M16 — advisor / readback gate
+### Admin
+- stable identity/localization/draft creation works
+- autosave attribution/version behavior works
+- working taxonomy/source/media management works
+- revisions readable but immutable
+- Owner creation/promotion denied
 
-After migrations are applied:
+### Owner
+- Admin membership management works
+- ordinary editorial authority works
+- destructive actions remain controlled workflows
 
-1. list all public tables with RLS state
-2. enumerate policies
-3. enumerate grants to `anon`, `authenticated`, `service_role`
-4. enumerate functions and function privileges
-5. enumerate Storage buckets/policies
-6. run Supabase security advisor
-7. run Supabase performance advisor
-8. confirm no unexpected public table/function exposure
-9. confirm no service secret exists in repository/client env
+Prefer pgTAP/repeatable SQL tests where practical.
+
+## M17 — readback/advisor gate
+
+After applying reviewed migrations:
+
+1. list tables + RLS state
+2. enumerate grants to `anon`, `authenticated`, `service_role`
+3. enumerate policies
+4. enumerate functions/function privileges
+5. inspect Storage buckets/policies
+6. run security advisor
+7. run performance advisor
+8. confirm no unexpected public object
+9. confirm browser env has no service/secret key
 10. record migration history
 
-Any security finding blocks the gate until understood and fixed.
+Any unexplained security finding blocks acceptance.
 
 ## Rollback philosophy
 
-Because the connected project is new and migrations are additive, rollback during pre-release development should prefer a corrective forward migration rather than destructive manual dashboard edits.
+Before real data exists, a clean reset may be acceptable only with explicit evidence and migration history. After real content/users exist, recovery defaults to corrective forward migrations, not manual destructive dashboard edits.
 
-Before real content/users exist, a clean reset may be acceptable only when explicitly justified and backed by migration history. Once real data exists, reset/drop is no longer the default recovery strategy.
+## Current boundary
 
-## Phase 3 boundary
-
-This sequence defines how schema application will happen; it does not itself authorize DDL.
-
-The Phase 3 security gate requires the schema blueprint + RLS matrix + this sequence to agree before any production schema mutation.
+This normalized sequence agrees with the security review. It still does not itself authorize production DDL; SQL migration files must be authored and reviewed against the RLS matrix before application.

@@ -39,6 +39,7 @@ export type StudioDraftUpdateInput = Readonly<{
   slug: string;
   summary: string;
   bodyJson: StudioEditableDocument;
+  editorialStatus: StudioEditorialStatus;
 }>;
 
 export type StudioDraftUpdateResult = Readonly<{
@@ -266,6 +267,7 @@ export async function updateStudioDraft(input: StudioDraftUpdateInput): Promise<
       p_slug: input.slug,
       p_summary: input.summary,
       p_body_json: input.bodyJson,
+      p_editorial_status: input.editorialStatus,
     }),
   });
 

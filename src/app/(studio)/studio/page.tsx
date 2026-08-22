@@ -1,24 +1,69 @@
-import Link from "next/link";
-
-export default function StudioLandingPage() {
+export default function StudioDashboardPage() {
   return (
-    <main className="container-page flex min-h-screen items-center py-16">
-      <section className="surface-raised mx-auto w-full max-w-xl p-6 sm:p-8">
-        <p className="text-meta">ABHIDEA Studio</p>
-        <h1 className="text-title mt-3">Private workspace</h1>
-        <p className="mt-5 leading-8 text-muted-foreground">
-          Studio is reserved for secure creator and admin access. No private content or draft data is exposed on this public milestone.
-        </p>
-        <div className="callout mt-6">
-          <p className="font-semibold">Secure sign-in is not enabled yet.</p>
-          <p className="mt-1 text-sm leading-6 text-muted-foreground">
-            Authentication and role-verified Studio access will be activated before the operational CMS is opened.
+    <main>
+      <header className="studio-topbar">
+        <div>
+          <p className="studio-kicker">ABHIDEA Studio</p>
+          <h1 className="studio-title">Creator dashboard</h1>
+        </div>
+        <span className="studio-status">Security foundation active</span>
+      </header>
+
+      <div className="studio-grid">
+        <section className="studio-panel">
+          <h2>Workspace overview</h2>
+          <p>
+            Phase 9 is wiring secure creator access before the CMS opens. The public Reader remains isolated from Studio code and private data.
           </p>
-        </div>
-        <div className="mt-7">
-          <Link className="button button-secondary" href="/">Return to ABHIDEA</Link>
-        </div>
-      </section>
+
+          <div className="studio-metric-grid" aria-label="Studio status summary">
+            <div className="studio-metric">
+              <strong>0</strong>
+              <span>Drafts</span>
+            </div>
+            <div className="studio-metric">
+              <strong>0</strong>
+              <span>In review</span>
+            </div>
+            <div className="studio-metric">
+              <strong>0</strong>
+              <span>Scheduled</span>
+            </div>
+            <div className="studio-metric">
+              <strong>0</strong>
+              <span>Published</span>
+            </div>
+          </div>
+        </section>
+
+        <section className="studio-panel">
+          <h2>Phase 9 checkpoint</h2>
+          <p>Authorization storage and RLS are active. Login/session protection is the next implementation slice.</p>
+          <div className="studio-actions">
+            <div className="studio-action">
+              <div>
+                <strong>Supabase authorization</strong>
+                <small>Admin / creator role source</small>
+              </div>
+              <span>Ready</span>
+            </div>
+            <div className="studio-action">
+              <div>
+                <strong>Secure sign-in</strong>
+                <small>Cookie SSR + server verification</small>
+              </div>
+              <span>Next</span>
+            </div>
+            <div className="studio-action">
+              <div>
+                <strong>Content workspace</strong>
+                <small>Draft engine starts in Phase 10</small>
+              </div>
+              <span>Locked</span>
+            </div>
+          </div>
+        </section>
+      </div>
     </main>
   );
 }

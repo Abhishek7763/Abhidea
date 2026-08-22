@@ -18,17 +18,21 @@
   padding: 1.25rem;
 }
 
-.studio-brand {
+.studio-brand,
+.studio-login-brand {
   display: grid;
   gap: 0.2rem;
+  text-decoration: none;
 }
 
-.studio-brand strong {
+.studio-brand strong,
+.studio-login-brand strong {
   font-size: 0.95rem;
   letter-spacing: 0.04em;
 }
 
-.studio-brand span {
+.studio-brand span,
+.studio-login-brand span {
   color: var(--text-secondary);
   font-size: 0.72rem;
 }
@@ -134,6 +138,13 @@
   line-height: 1.65;
 }
 
+.studio-empty-state {
+  min-height: 18rem;
+  display: grid;
+  align-content: center;
+  justify-items: start;
+}
+
 .studio-metric-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -190,6 +201,170 @@
   font-size: 0.75rem;
 }
 
+.studio-account-card {
+  display: grid;
+  gap: 0.8rem;
+  margin-top: auto;
+  border-top: 1px solid var(--border);
+  padding-top: 1rem;
+}
+
+.studio-account-card > div {
+  min-width: 0;
+}
+
+.studio-account-card strong,
+.studio-account-card span {
+  display: block;
+}
+
+.studio-account-card strong {
+  overflow: hidden;
+  font-size: 0.75rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.studio-account-card span {
+  margin-top: 0.2rem;
+  color: var(--text-secondary);
+  font-size: 0.68rem;
+  text-transform: capitalize;
+}
+
+.studio-account-card button {
+  min-height: 42px;
+  width: 100%;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface-raised);
+  color: var(--text-primary);
+  font-weight: 750;
+  cursor: pointer;
+}
+
+.studio-login-shell {
+  display: grid;
+  min-height: 100vh;
+  place-items: center;
+  padding: 1.25rem;
+  background:
+    radial-gradient(circle at 50% 0%, color-mix(in srgb, var(--accent-soft) 38%, transparent), transparent 28rem),
+    var(--background);
+}
+
+.studio-login-card {
+  width: min(100%, 28rem);
+  border: 1px solid var(--border);
+  border-radius: calc(var(--radius-xl) + 0.25rem);
+  background: color-mix(in srgb, var(--surface) 96%, transparent);
+  box-shadow: 0 24px 80px color-mix(in srgb, #000 14%, transparent);
+  padding: 1.25rem;
+}
+
+.studio-login-heading {
+  margin-top: 2rem;
+}
+
+.studio-login-heading p,
+.studio-login-heading h1,
+.studio-login-heading span {
+  margin: 0;
+}
+
+.studio-login-heading p {
+  color: var(--text-secondary);
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.studio-login-heading h1 {
+  margin-top: 0.45rem;
+  font-size: clamp(1.85rem, 8vw, 2.45rem);
+  letter-spacing: -0.04em;
+  line-height: 1.08;
+}
+
+.studio-login-heading span {
+  display: block;
+  margin-top: 0.7rem;
+  color: var(--text-secondary);
+  font-size: 0.86rem;
+  line-height: 1.6;
+}
+
+.studio-login-error {
+  margin: 1rem 0 0;
+  border: 1px solid color-mix(in srgb, var(--danger) 35%, var(--border));
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--danger) 10%, var(--surface));
+  padding: 0.8rem 0.9rem;
+  color: var(--text-primary);
+  font-size: 0.82rem;
+  line-height: 1.5;
+}
+
+.studio-login-form {
+  display: grid;
+  gap: 0.9rem;
+  margin-top: 1.25rem;
+}
+
+.studio-login-form label {
+  display: grid;
+  gap: 0.4rem;
+}
+
+.studio-login-form label > span {
+  color: var(--text-secondary);
+  font-size: 0.75rem;
+  font-weight: 750;
+}
+
+.studio-login-form input {
+  min-height: 48px;
+  width: 100%;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface-raised);
+  color: var(--text-primary);
+  padding: 0.75rem 0.85rem;
+  outline: none;
+}
+
+.studio-login-form input:focus-visible {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 18%, transparent);
+}
+
+.studio-login-form button {
+  min-height: 48px;
+  border: 0;
+  border-radius: var(--radius-md);
+  background: var(--accent);
+  color: var(--accent-foreground, #fff);
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.studio-login-footnote {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-top: 1.2rem;
+  color: var(--text-secondary);
+  font-size: 0.72rem;
+}
+
+.studio-login-footnote a {
+  color: var(--link);
+  font-weight: 750;
+  text-decoration: none;
+}
+
 .studio-mobile-nav {
   position: fixed;
   inset: auto 0.6rem calc(0.6rem + env(safe-area-inset-bottom));
@@ -224,6 +399,10 @@
   .studio-metric-grid {
     grid-template-columns: repeat(4, minmax(0, 1fr));
   }
+
+  .studio-login-card {
+    padding: 1.7rem;
+  }
 }
 
 @media (min-width: 72rem) {
@@ -234,8 +413,9 @@
   .studio-sidebar {
     position: sticky;
     top: 0;
-    display: block;
+    display: flex;
     height: 100vh;
+    flex-direction: column;
   }
 
   .studio-main {

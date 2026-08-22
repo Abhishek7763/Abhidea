@@ -3,6 +3,7 @@ import test from "node:test";
 
 import {
   clampPercent,
+  findClosestIndex,
   splitSpeechText,
 } from "../src/features/reader/reader-experience-utils.ts";
 
@@ -11,6 +12,13 @@ test("Reader progress clamps and rounds safely", () => {
   assert.equal(clampPercent(42.6), 43);
   assert.equal(clampPercent(140), 100);
   assert.equal(clampPercent(Number.NaN), 0);
+});
+
+test("Nearest readable segment selects the closest viewport position safely", () => {
+  assert.equal(findClosestIndex([], 240), 0);
+  assert.equal(findClosestIndex([-500, -80, 180, 520], 220), 2);
+  assert.equal(findClosestIndex([40, 360, 720], 300), 1);
+  assert.equal(findClosestIndex([Number.NaN, 90, 410], 100), 1);
 });
 
 test("Speech text splitter keeps short text intact", () => {

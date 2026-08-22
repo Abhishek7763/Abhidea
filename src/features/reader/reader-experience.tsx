@@ -2,7 +2,11 @@
 
 import { useEffect, useRef, useState } from "react";
 
-import { clampPercent, splitSpeechText } from "./reader-experience-utils";
+import {
+  clampPercent,
+  findClosestIndex,
+  splitSpeechText,
+} from "./reader-experience-utils";
 
 type ReaderLocale = "en" | "hi";
 type PlaybackMode = "idle" | "speaking" | "paused";
@@ -41,6 +45,16 @@ function getSpeechElements(): HTMLElement[] {
       ].join(","),
     ),
   ).filter((element) => element.innerText.trim().length > 0);
+}
+
+function getSpeechStartIndex(elements: readonly HTMLElement[]): number {
+  const target = Math.min(320, Math.max(140, window.innerHeight * 0.32));
+  const positions = elements.map((element) => {
+    const rect = element.getBoundingClientRect();
+    return rect.bottom < 0 ? rect.bottom : rect.top;
+  });
+
+  return findClosestIndex(positions, target);
 }
 
 function preferredVoice(locale: ReaderLocale): SpeechSynthesisVoice | undefined {
@@ -231,13 +245,20 @@ export function ReaderExperience({ locale, title }: ReaderExperienceProps) {
       return;
     }
 
+    const startIndex = getSpeechStartIndex(elementsRef.current);
     window.speechSynthesis.cancel();
     stoppedRef.current = false;
-    currentIndexRef.current = 0;
-    setSpeechMessage("");
+    currentIndexRef.current = startIndex;
+    setSpeechMessage(
+      startIndex > 0
+        ? isHindi
+          ? "मौजूदा पढ़ने की जगह से शुरू किया।"
+          : "Started from your current reading position."
+        : "",
+    );
     setMode("speaking");
-    setSegmentPosition({ current: 1, total: elementsRef.current.length });
-    window.setTimeout(() => speakSegment(0, 0), 0);
+    setSegmentPosition({ current: startIndex + 1, total: elementsRef.current.length });
+    window.setTimeout(() => speakSegment(startIndex, 0), 0);
   }
 
   function togglePlayback() {
@@ -315,12 +336,15 @@ export function ReaderExperience({ locale, title }: ReaderExperienceProps) {
         listen: "सुनकर पढ़ें",
         progress: "रीडिंग प्रोग्रेस",
         play: "चलाएँ",
+        playHere: "यहाँ से चलाएँ",
         pause: "रोकें",
         resume: "जारी रखें",
         stop: "बंद करें",
         speed: "गति",
         follow: "ऑटो-फॉलो",
         segment: "भाग",
+        options: "ऑडियो विकल्प",
+        listening: "ऑडियो चल रहा है",
         share: "शेयर",
         shared: "शेयर हुआ",
         copied: "लिंक कॉपी हुआ",
@@ -331,12 +355,15 @@ export function ReaderExperience({ locale, title }: ReaderExperienceProps) {
         listen: "Listen & follow",
         progress: "Reading progress",
         play: "Play",
+        playHere: "Play from here",
         pause: "Pause",
         resume: "Resume",
         stop: "Stop",
         speed: "Speed",
         follow: "Auto-follow",
         segment: "Segment",
+        options: "Audio options",
+        listening: "Audio playing",
         share: "Share",
         shared: "Shared",
         copied: "Link copied",
@@ -344,7 +371,8 @@ export function ReaderExperience({ locale, title }: ReaderExperienceProps) {
         unsupported: "Text-to-speech is not available in this browser. The normal Reader remains fully usable.",
       };
 
-  const playbackLabel = mode === "speaking" ? text.pause : mode === "paused" ? text.resume : text.play;
+  const idleLabel = readingProgress > 4 ? text.playHere : text.play;
+  const playbackLabel = mode === "speaking" ? text.pause : mode === "paused" ? text.resume : idleLabel;
   const shareLabel =
     shareState === "shared"
       ? text.shared
@@ -353,6 +381,10 @@ export function ReaderExperience({ locale, title }: ReaderExperienceProps) {
         : shareState === "error"
           ? text.shareError
           : text.share;
+  const segmentProgress =
+    segmentPosition.total > 0
+      ? clampPercent((segmentPosition.current / segmentPosition.total) * 100)
+      : 0;
 
   return (
     <>
@@ -393,23 +425,26 @@ export function ReaderExperience({ locale, title }: ReaderExperienceProps) {
               {speechMessage ? <span>{speechMessage}</span> : null}
             </div>
 
-            <div className="reader-speech-options">
-              <div className="reader-rate-control" role="group" aria-label={text.speed}>
-                <span>{text.speed}</span>
-                <div>
-                  {rates.map((option) => (
-                    <button key={option} type="button" aria-pressed={rate === option} onClick={() => changeRate(option)}>
-                      {option}×
-                    </button>
-                  ))}
+            <details className="reader-audio-options">
+              <summary>{text.options}</summary>
+              <div className="reader-speech-options">
+                <div className="reader-rate-control" role="group" aria-label={text.speed}>
+                  <span>{text.speed}</span>
+                  <div>
+                    {rates.map((option) => (
+                      <button key={option} type="button" aria-pressed={rate === option} onClick={() => changeRate(option)}>
+                        {option}×
+                      </button>
+                    ))}
+                  </div>
                 </div>
-              </div>
 
-              <button className="reader-follow-toggle" type="button" aria-pressed={autoFollow} onClick={toggleAutoFollow}>
-                <span aria-hidden="true">◎</span>
-                {text.follow}
-              </button>
-            </div>
+                <button className="reader-follow-toggle" type="button" aria-pressed={autoFollow} onClick={toggleAutoFollow}>
+                  <span aria-hidden="true">◎</span>
+                  {text.follow}
+                </button>
+              </div>
+            </details>
           </>
         )}
 
@@ -418,6 +453,24 @@ export function ReaderExperience({ locale, title }: ReaderExperienceProps) {
           {shareLabel}
         </button>
       </section>
+
+      {speechSupported && mode !== "idle" ? (
+        <section className="reader-mini-player" aria-label={text.listening}>
+          <div className="reader-mini-progress" aria-hidden="true">
+            <span style={{ width: `${segmentProgress}%` }} />
+          </div>
+          <div className="reader-mini-copy">
+            <span>{text.listening}</span>
+            <strong>{segmentPosition.current}/{segmentPosition.total}</strong>
+          </div>
+          <button className="reader-mini-play" type="button" onClick={togglePlayback} aria-label={playbackLabel}>
+            <span aria-hidden="true">{mode === "speaking" ? "Ⅱ" : "▶"}</span>
+          </button>
+          <button className="reader-mini-stop" type="button" onClick={stopSpeech} aria-label={text.stop}>
+            <span aria-hidden="true">■</span>
+          </button>
+        </section>
+      ) : null}
     </>
   );
 }

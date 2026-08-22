@@ -3,6 +3,7 @@
 Date: 22 August 2026
 
 Implementation is complete on `work/public-shell` and is awaiting CI/staging verification.
+The `staging` branch was safely resynced to the released `main` baseline after verifying that its shared file blobs were identical and preserving the former staging head in `backup/staging-phase4-2026-08-22`.
 
 Gate checklist:
 - [x] header/navigation implemented

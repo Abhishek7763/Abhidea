@@ -34,9 +34,7 @@ function CreatorVisual() {
 }
 
 export default function AboutPage() {
-  const socialLinks = creatorProfile.socialLinks.filter(
-    (item): item is { label: string; href: string } => Boolean(item.href),
-  );
+  const socialLinks = creatorProfile.socialLinks.filter((item) => item.href !== null);
 
   return (
     <div className="container-page">

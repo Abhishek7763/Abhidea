@@ -1,16 +1,19 @@
-.studio-publication-safety {
+.studio-publication-safety,
+.studio-publish-preflight {
   display: grid;
   gap: 1rem;
   margin-bottom: 1rem;
 }
 
-.studio-publication-safety h2 {
+.studio-publication-safety h2,
+.studio-publish-preflight h2 {
   margin: 0.35rem 0 0;
   font-size: clamp(1.15rem, 4vw, 1.55rem);
   letter-spacing: -0.025em;
 }
 
-.studio-publication-safety > div:first-child > p:last-child {
+.studio-publication-safety > div:first-child > p:last-child,
+.studio-publish-preflight > div:first-child > p:last-child {
   max-width: 48rem;
   margin: 0.5rem 0 0;
   color: var(--text-secondary);
@@ -18,9 +21,11 @@
   line-height: 1.55;
 }
 
-.studio-publication-status {
+.studio-publication-status,
+.studio-publish-ready,
+.studio-publish-blocked {
   display: grid;
-  gap: 0.45rem;
+  gap: 0.55rem;
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   background: var(--surface-subtle);
@@ -35,19 +40,25 @@
   text-transform: uppercase;
 }
 
-.studio-publication-status > strong {
+.studio-publication-status > strong,
+.studio-publish-ready > strong,
+.studio-publish-blocked > strong {
   font-size: 1rem;
 }
 
-.studio-publication-status[data-state="published"] > strong {
+.studio-publication-status[data-state="published"] > strong,
+.studio-publish-ready > strong {
   color: var(--success);
 }
 
-.studio-publication-status[data-state="archived"] > strong {
+.studio-publication-status[data-state="archived"] > strong,
+.studio-publish-blocked > strong {
   color: var(--warning);
 }
 
-.studio-publication-status p {
+.studio-publication-status p,
+.studio-publish-ready p,
+.studio-publish-blocked p {
   margin: 0;
   color: var(--text-secondary);
   font-size: 0.74rem;
@@ -81,8 +92,60 @@
   font-size: 0.72rem;
 }
 
+.studio-publish-blocked ul {
+  display: grid;
+  gap: 0.35rem;
+  margin: 0;
+  padding-left: 1.1rem;
+  color: var(--text-primary);
+  font-size: 0.74rem;
+  line-height: 1.5;
+}
+
+.studio-publish-form {
+  display: grid;
+  gap: 0.55rem;
+  margin-top: 0.25rem;
+}
+
+.studio-publish-form button {
+  min-height: 46px;
+  border: 0;
+  border-radius: var(--radius-md);
+  background: var(--accent);
+  padding: 0.7rem 0.9rem;
+  color: var(--accent-contrast);
+  font-weight: 850;
+  cursor: pointer;
+}
+
+.studio-publish-form button:disabled {
+  cursor: wait;
+  opacity: 0.62;
+}
+
+.studio-publish-form > span {
+  color: var(--text-secondary);
+  font-size: 0.68rem;
+  line-height: 1.45;
+}
+
+.studio-publish-error {
+  border: 1px solid color-mix(in srgb, var(--danger) 42%, var(--border));
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--danger) 9%, var(--surface));
+  padding: 0.65rem 0.7rem;
+  color: var(--text-primary) !important;
+}
+
+.studio-publish-error[data-kind="conflict"] {
+  border-color: color-mix(in srgb, var(--warning) 48%, var(--border));
+  background: color-mix(in srgb, var(--warning) 10%, var(--surface));
+}
+
 @media (min-width: 48rem) {
-  .studio-publication-safety {
+  .studio-publication-safety,
+  .studio-publish-preflight {
     grid-template-columns: minmax(0, 1.25fr) minmax(16rem, 0.75fr);
     align-items: start;
   }

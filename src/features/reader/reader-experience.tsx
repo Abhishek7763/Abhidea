@@ -87,7 +87,6 @@ export function ReaderExperience({ locale, title }: ReaderExperienceProps) {
 
   const elementsRef = useRef<HTMLElement[]>([]);
   const currentIndexRef = useRef(0);
-  const currentChunkRef = useRef(0);
   const stoppedRef = useRef(true);
   const rateRef = useRef<(typeof rates)[number]>(1);
   const autoFollowRef = useRef(true);
@@ -96,21 +95,20 @@ export function ReaderExperience({ locale, title }: ReaderExperienceProps) {
 
   useEffect(() => {
     const supported = "speechSynthesis" in window && "SpeechSynthesisUtterance" in window;
-    setSpeechSupported(supported);
-
     const storedRate = Number(localStorage.getItem(RATE_STORAGE_KEY));
-    if (isSpeechRate(storedRate)) {
-      setRate(storedRate);
-      rateRef.current = storedRate;
-    }
-
     const storedFollow = localStorage.getItem(FOLLOW_STORAGE_KEY);
-    if (storedFollow === "false") {
-      setAutoFollow(false);
-      autoFollowRef.current = false;
-    }
+
+    if (isSpeechRate(storedRate)) rateRef.current = storedRate;
+    if (storedFollow === "false") autoFollowRef.current = false;
+
+    const hydrateTimer = window.setTimeout(() => {
+      setSpeechSupported(supported);
+      if (isSpeechRate(storedRate)) setRate(storedRate);
+      if (storedFollow === "false") setAutoFollow(false);
+    }, 0);
 
     return () => {
+      window.clearTimeout(hydrateTimer);
       if (supported) window.speechSynthesis.cancel();
       document.querySelectorAll(".reader-audio-active").forEach((element) => {
         element.classList.remove("reader-audio-active");
@@ -199,7 +197,6 @@ export function ReaderExperience({ locale, title }: ReaderExperienceProps) {
     }
 
     currentIndexRef.current = index;
-    currentChunkRef.current = chunkIndex;
     if (chunkIndex === 0) highlightSegment(index);
 
     const utterance = new SpeechSynthesisUtterance(chunks[chunkIndex]);
@@ -237,7 +234,6 @@ export function ReaderExperience({ locale, title }: ReaderExperienceProps) {
     window.speechSynthesis.cancel();
     stoppedRef.current = false;
     currentIndexRef.current = 0;
-    currentChunkRef.current = 0;
     setSpeechMessage("");
     setMode("speaking");
     setSegmentPosition({ current: 1, total: elementsRef.current.length });

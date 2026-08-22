@@ -3,6 +3,24 @@ export function clampPercent(value: number): number {
   return Math.min(100, Math.max(0, Math.round(value)));
 }
 
+export function findClosestIndex(values: readonly number[], target: number): number {
+  if (values.length === 0 || !Number.isFinite(target)) return 0;
+
+  let bestIndex = 0;
+  let bestDistance = Number.POSITIVE_INFINITY;
+
+  values.forEach((value, index) => {
+    if (!Number.isFinite(value)) return;
+    const distance = Math.abs(value - target);
+    if (distance < bestDistance) {
+      bestIndex = index;
+      bestDistance = distance;
+    }
+  });
+
+  return bestIndex;
+}
+
 export function splitSpeechText(text: string, maxLength = 240): string[] {
   const normalized = text.replace(/\s+/g, " ").trim();
   if (!normalized) return [];

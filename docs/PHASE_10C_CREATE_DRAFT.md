@@ -1,19 +1,20 @@
 # ABHIDEA Phase 10C — Create Draft
 
-Status: Database verification complete — repository gate pending
+Status: Phase 10C merged; post-merge RPC hardening verification complete — repository gate pending
 Date: 2026-08-22
-Baseline staging SHA: `32a9c2224f4247c1612b356a343cd39c0d138178`
+Original Phase 10C baseline: `32a9c2224f4247c1612b356a343cd39c0d138178`
+Phase 10C staging merge: `0917d9e44a179cee5201b61210db93815497eef6`
 Supabase project: `zdsanovvmmwfiqjjnxhr`
 
 ## Purpose
 
-Open the first real private Studio authoring path on top of the Phase 10A schema and Phase 10B list without changing public Reader delivery.
+Phase 10C opens the first real private Studio authoring path on top of the Phase 10A schema and Phase 10B list without changing public Reader delivery.
 
-Phase 10C creates one localized draft atomically and then returns to the Content library. It does not publish, schedule, create revisions, or replace the public fixture/catalog path.
+The main Phase 10C workflow was merged to `staging` through PR #26. The follow-up work recorded here preserves that merged migration unchanged and adds a forward hardening migration so the repository matches the final live RPC definition verified after the interrupted/restarted execution.
 
 ## Studio flow
 
-`/studio/content/new` now provides:
+`/studio/content/new` provides:
 
 1. active Content Type selection
 2. language selection: English or Hindi
@@ -61,15 +62,21 @@ Draft slug uniqueness is still intentionally deferred to publication preflight.
 
 ## Transactional database write
 
-Repository migration:
+Original merged migration:
 
-- `supabase/migrations/20260822210000_phase10c_create_draft_rpc.sql`
+- `supabase/migrations/20260822211500_phase10c_create_draft_rpc.sql`
 
-The migration adds one RPC:
+Forward hardening migration:
+
+- `supabase/migrations/20260822213000_phase10c_create_draft_rpc_hardening.sql`
+
+The hardening migration uses `CREATE OR REPLACE FUNCTION`; it does not edit or remove the already-merged historical migration.
+
+The RPC is:
 
 - `public.create_content_draft(uuid,text,text,text,text,jsonb,uuid[])`
 
-The RPC creates, in one transaction:
+One RPC call creates, in one transaction:
 
 - `contents`
 - `content_localizations`
@@ -78,12 +85,23 @@ The RPC creates, in one transaction:
 
 A failure at any point prevents a partial Content/Localization/Draft chain from being left behind.
 
+## Hardening changes
+
+The final live definition keeps the original `SECURITY INVOKER` model and tightens the server-side contract by:
+
+- explicitly rejecting route-breaking slug whitespace and `/ ? #`
+- de-duplicating Subject UUIDs before validation/insertion
+- validating the de-duplicated Subject set against active Subjects
+- keeping the Subject maximum at 12
+- retaining explicit top-level `schemaVersion = 1` body validation
+- preserving existing RLS as the authorization boundary
+- retaining explicit function privilege revocation/grant statements
+
 ## Security model
 
-The RPC is deliberately `SECURITY INVOKER`, not `SECURITY DEFINER`.
+Verified properties of the final live RPC:
 
-Verified properties:
-
+- `SECURITY DEFINER`: false
 - fixed empty `search_path`
 - caller permissions and existing RLS remain authoritative
 - `anon` EXECUTE: false
@@ -92,7 +110,6 @@ Verified properties:
 - active Content Type is required
 - locale is limited to `en|hi`
 - title, slug, summary and body shape are revalidated inside Postgres
-- Subject IDs are de-duplicated, limited to 12 and must resolve to active Subjects
 - actor attribution continues through the existing Phase 10A audit triggers
 - no service-role key is used by Studio
 
@@ -123,9 +140,9 @@ The connected Supabase migration history contains two generated entries named `p
 - `20260822151459 phase10c_create_draft_rpc`
 - `20260822153440 phase10c_create_draft_rpc`
 
-This happened across the interrupted/restarted Phase 10C execution. The migration uses `CREATE OR REPLACE FUNCTION`, so the second application replaced the same function definition rather than creating a duplicate schema object. Readback confirms exactly one live function signature.
+This occurred across the interrupted/restarted Phase 10C execution. The first application activated the merged RPC and the later application used `CREATE OR REPLACE FUNCTION` to harden that same signature. Readback confirms exactly one live function object.
 
-The history rows are intentionally not deleted or rewritten after the fact; destructive migration-history cleanup would create more risk than documenting the idempotent duplicate apply. The repository contains only the final migration definition.
+The generated history rows are intentionally not deleted or rewritten. The repository preserves the original merged migration and records the final live definition as a new forward hardening migration, which is safer than rewriting applied history.
 
 ## Deliberately out of Phase 10C
 
@@ -147,12 +164,18 @@ Those remain later checkpoints.
 
 ## Repository acceptance gate
 
-Phase 10C is accepted only after:
+Main Phase 10C:
 
-1. transactional RPC exists and security privileges are verified — PASS
-2. active Studio member rollback creation succeeds — PASS
-3. non-member creation is blocked — PASS
-4. rollback probes leave no fake rows — PASS
-5. Repository Verify passes — PENDING
-6. PR merges to `staging` only after green CI — PENDING
-7. production `main` remains untouched — PASS
+1. Create Draft workflow merged through PR #26 — PASS
+2. transactional RPC exists and security privileges are verified — PASS
+3. active Studio member rollback creation succeeds — PASS
+4. non-member creation is blocked — PASS
+5. rollback probes leave no fake rows — PASS
+
+Post-merge hardening:
+
+1. original applied migration remains preserved — PASS
+2. final live RPC is represented by a forward hardening migration — PASS
+3. Repository Verify passes for the reconciliation PR — PENDING
+4. merge to `staging` only after green CI — PENDING
+5. production `main` remains untouched — PASS

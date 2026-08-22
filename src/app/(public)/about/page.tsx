@@ -34,7 +34,7 @@ function CreatorVisual() {
 }
 
 export default function AboutPage() {
-  const socialLinks = creatorProfile.socialLinks.filter((item) => item.href !== null);
+  const hasSocialLinks = creatorProfile.socialLinks.some((item) => Boolean(item.href));
 
   return (
     <div className="container-page">
@@ -54,13 +54,15 @@ export default function AboutPage() {
             <p className="mt-1 text-sm text-muted-foreground">{creatorProfile.location}</p>
           </div>
 
-          {socialLinks.length > 0 ? (
+          {hasSocialLinks ? (
             <div className="social-links" aria-label="Creator social links">
-              {socialLinks.map((item) => (
-                <a key={item.label} href={item.href} rel="noreferrer" target="_blank">
-                  {item.label}
-                </a>
-              ))}
+              {creatorProfile.socialLinks.map((item) =>
+                item.href ? (
+                  <a key={item.label} href={item.href} rel="noreferrer" target="_blank">
+                    {item.label}
+                  </a>
+                ) : null,
+              )}
             </div>
           ) : null}
         </aside>

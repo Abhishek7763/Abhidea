@@ -5,6 +5,7 @@ import {
   isStudioEditorialStatus,
   type StudioContentLocale,
   type StudioContentTypeOption,
+  type StudioDraftCreateInput,
   type StudioEditorialStatus,
 } from "@/features/studio-content-model";
 import {
@@ -43,6 +44,26 @@ export type StudioDraftUpdateInput = Readonly<{
 export type StudioDraftUpdateResult = Readonly<{
   lockVersion: number;
   updatedAt: string;
+}>;
+
+export type StudioEditionLink = Readonly<{
+  localizationId: string;
+  contentId: string;
+  locale: StudioContentLocale;
+}>;
+
+export type StudioLinkedEditionCreateInput = Readonly<{
+  sourceLocalizationId: string;
+  locale: StudioContentLocale;
+  title: string;
+  slug: string;
+  summary: string;
+  bodyJson: StudioDraftCreateInput["bodyJson"];
+}>;
+
+export type StudioLinkedEditionCreateResult = Readonly<{
+  contentId: string;
+  localizationId: string;
 }>;
 
 export class StudioEditorRequestError extends Error {
@@ -106,9 +127,10 @@ async function requestStudioJson(endpoint: URL, init: RequestInit = {}): Promise
   const payload: unknown = await response.json().catch(() => null);
   if (!response.ok) {
     const code = isRecord(payload) && typeof payload.code === "string" ? payload.code : undefined;
-    const message = isRecord(payload) && typeof payload.message === "string"
-      ? payload.message
-      : `Studio editor request failed with status ${response.status}.`;
+    const message =
+      isRecord(payload) && typeof payload.message === "string"
+        ? payload.message
+        : `Studio editor request failed with status ${response.status}.`;
     throw new StudioEditorRequestError(message, response.status, code);
   }
 
@@ -158,6 +180,15 @@ function parseEditorRow(value: unknown): StudioDraftEditorData | null {
   };
 }
 
+function parseEditionLink(value: unknown): StudioEditionLink | null {
+  if (!isRecord(value)) return null;
+  const localizationId = requiredString(value.id);
+  const contentId = requiredString(value.content_id);
+  const locale = value.locale;
+  if (!localizationId || !contentId || !isStudioContentLocale(locale)) return null;
+  return { localizationId, contentId, locale };
+}
+
 export async function loadStudioDraftEditor(localizationId: string): Promise<StudioDraftEditorData | null> {
   const { url } = getSupabaseConfig();
   const endpoint = new URL(`${url}/rest/v1/content_drafts`);
@@ -175,6 +206,52 @@ export async function loadStudioDraftEditor(localizationId: string): Promise<Stu
   const row = parseEditorRow(payload[0]);
   if (!row) throw new Error("Studio editor returned an invalid draft payload.");
   return row;
+}
+
+export async function loadStudioEditionLinks(contentId: string): Promise<readonly StudioEditionLink[]> {
+  const { url } = getSupabaseConfig();
+  const endpoint = new URL(`${url}/rest/v1/content_localizations`);
+  endpoint.searchParams.set("select", "id,content_id,locale");
+  endpoint.searchParams.set("content_id", `eq.${contentId}`);
+  endpoint.searchParams.set("order", "locale.asc");
+  endpoint.searchParams.set("limit", "2");
+
+  const payload = await requestStudioJson(endpoint);
+  if (!Array.isArray(payload)) throw new Error("Studio editions returned an invalid row payload.");
+
+  return payload
+    .map(parseEditionLink)
+    .filter((value): value is StudioEditionLink => value !== null);
+}
+
+export async function createStudioLinkedEdition(
+  input: StudioLinkedEditionCreateInput,
+): Promise<StudioLinkedEditionCreateResult> {
+  const { url } = getSupabaseConfig();
+  const endpoint = new URL(`${url}/rest/v1/rpc/create_linked_content_edition`);
+  const payload = await requestStudioJson(endpoint, {
+    method: "POST",
+    body: JSON.stringify({
+      p_source_localization_id: input.sourceLocalizationId,
+      p_locale: input.locale,
+      p_title: input.title,
+      p_slug: input.slug,
+      p_summary: input.summary,
+      p_body_json: input.bodyJson,
+    }),
+  });
+
+  if (!Array.isArray(payload) || !isRecord(payload[0])) {
+    throw new Error("Studio editions returned an invalid create result.");
+  }
+
+  const contentId = requiredString(payload[0].content_id);
+  const localizationId = requiredString(payload[0].localization_id);
+  if (!contentId || !localizationId) {
+    throw new Error("Studio editions returned an incomplete create result.");
+  }
+
+  return { contentId, localizationId };
 }
 
 export async function updateStudioDraft(input: StudioDraftUpdateInput): Promise<StudioDraftUpdateResult> {

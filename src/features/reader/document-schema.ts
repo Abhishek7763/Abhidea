@@ -177,12 +177,27 @@ export function parseReaderDocument(input: unknown): ParsedReaderDocument {
   }
 
   const parsedBlocks: ReaderBlock[] = [];
+  const usedIds = new Set<string>();
   let ignoredBlocks = 0;
 
   input.blocks.forEach((block, index) => {
     const parsed = parseBlock(block, index);
-    if (parsed) parsedBlocks.push(parsed);
-    else ignoredBlocks += 1;
+    if (!parsed) {
+      ignoredBlocks += 1;
+      return;
+    }
+
+    const baseId = parsed.id;
+    let uniqueId = baseId;
+    let suffix = 2;
+
+    while (usedIds.has(uniqueId)) {
+      uniqueId = `${baseId}-${suffix}`;
+      suffix += 1;
+    }
+
+    usedIds.add(uniqueId);
+    parsedBlocks.push(uniqueId === parsed.id ? parsed : { ...parsed, id: uniqueId });
   });
 
   return {

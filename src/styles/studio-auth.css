@@ -1,0 +1,203 @@
+.studio-login-shell {
+  display: grid;
+  min-height: 100vh;
+  place-items: center;
+  background:
+    radial-gradient(circle at top left, color-mix(in srgb, var(--accent-soft) 38%, transparent), transparent 32rem),
+    var(--background);
+  padding: 1rem;
+  color: var(--text-primary);
+}
+
+.studio-login-card {
+  width: min(100%, 30rem);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  background: color-mix(in srgb, var(--surface) 96%, transparent);
+  box-shadow: 0 30px 80px color-mix(in srgb, #000 12%, transparent);
+  padding: clamp(1.25rem, 5vw, 2rem);
+}
+
+.studio-login-brand {
+  display: inline-grid;
+  gap: 0.18rem;
+  color: var(--text-primary);
+  text-decoration: none;
+}
+
+.studio-login-brand strong {
+  font-size: 0.9rem;
+  letter-spacing: 0.08em;
+}
+
+.studio-login-brand span,
+.studio-login-heading span,
+.studio-login-footnote {
+  color: var(--text-secondary);
+  font-size: 0.76rem;
+}
+
+.studio-login-heading {
+  margin-top: clamp(2rem, 7vw, 3.25rem);
+}
+
+.studio-login-heading p {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.studio-login-heading h1 {
+  margin: 0.55rem 0 0.6rem;
+  font-size: clamp(2rem, 8vw, 3rem);
+  letter-spacing: -0.05em;
+  line-height: 1.03;
+}
+
+.studio-login-form {
+  display: grid;
+  gap: 1rem;
+  margin-top: 1.6rem;
+}
+
+.studio-login-form label {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.studio-login-form label > span {
+  color: var(--text-secondary);
+  font-size: 0.74rem;
+  font-weight: 750;
+}
+
+.studio-login-form input {
+  min-height: 48px;
+  width: 100%;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--surface-subtle);
+  padding: 0.75rem 0.85rem;
+  color: var(--text-primary);
+  outline: none;
+}
+
+.studio-login-form input:focus-visible {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 18%, transparent);
+}
+
+.studio-login-form button,
+.studio-account-card button {
+  min-height: 44px;
+  border: 1px solid color-mix(in srgb, var(--accent) 55%, var(--border));
+  border-radius: var(--radius-lg);
+  background: var(--accent);
+  padding: 0.7rem 0.9rem;
+  color: var(--accent-contrast);
+  cursor: pointer;
+  font-weight: 800;
+}
+
+.studio-login-form button:hover,
+.studio-account-card button:hover {
+  filter: brightness(1.04);
+}
+
+.studio-login-error {
+  margin: 1rem 0 0;
+  border: 1px solid color-mix(in srgb, var(--danger) 35%, var(--border));
+  border-radius: var(--radius-lg);
+  background: color-mix(in srgb, var(--danger-soft) 60%, var(--surface));
+  padding: 0.75rem 0.85rem;
+  color: var(--text-primary);
+  font-size: 0.82rem;
+  line-height: 1.5;
+}
+
+.studio-login-footnote {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-top: 1.3rem;
+  border-top: 1px solid var(--border);
+  padding-top: 1rem;
+}
+
+.studio-login-footnote a {
+  color: var(--link);
+  font-weight: 750;
+  text-underline-offset: 0.2em;
+}
+
+.studio-account-card {
+  display: grid;
+  gap: 0.75rem;
+  margin-top: auto;
+  border-top: 1px solid var(--border);
+  padding-top: 1rem;
+}
+
+.studio-sidebar {
+  grid-template-rows: auto auto 1fr auto;
+}
+
+.studio-account-card > div {
+  min-width: 0;
+}
+
+.studio-account-card strong,
+.studio-account-card span {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.studio-account-card strong {
+  font-size: 0.78rem;
+}
+
+.studio-account-card span {
+  margin-top: 0.15rem;
+  color: var(--text-secondary);
+  font-size: 0.68rem;
+  text-transform: capitalize;
+}
+
+.studio-account-card button {
+  width: 100%;
+  min-height: 40px;
+  border-color: var(--border);
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 0.74rem;
+}
+
+.studio-empty-state {
+  min-height: min(56vh, 28rem);
+  display: grid;
+  align-content: center;
+  justify-items: start;
+}
+
+.studio-empty-state h2 {
+  margin-top: 0.55rem;
+  font-size: clamp(1.5rem, 5vw, 2.3rem);
+  letter-spacing: -0.035em;
+}
+
+.studio-empty-state p:last-child {
+  max-width: 42rem;
+}
+
+@media (min-width: 72rem) {
+  .studio-sidebar {
+    display: grid;
+  }
+}

@@ -1,36 +1,35 @@
 # ABHIDEA Phase 10C — Create Draft
 
-Status: Implementation checkpoint
+Status: Phase 10C merged; post-merge RPC hardening verification complete — repository gate pending
 Date: 2026-08-22
-Baseline staging SHA: `32a9c2224f4247c1612b356a343cd39c0d138178`
+Original Phase 10C baseline: `32a9c2224f4247c1612b356a343cd39c0d138178`
+Phase 10C staging merge: `0917d9e44a179cee5201b61210db93815497eef6`
 Supabase project: `zdsanovvmmwfiqjjnxhr`
 
 ## Purpose
 
-Open the first real Studio authoring write path while preserving the Phase 10A data model, Phase 9 authorization boundary and fixture-backed public Reader.
+Phase 10C opens the first real private Studio authoring path on top of the Phase 10A schema and Phase 10B list without changing public Reader delivery.
 
-Phase 10C creates only private working state. It does not publish, schedule, revise, autosave or change public content.
+The main Phase 10C workflow was merged to `staging` through PR #26. The follow-up work recorded here preserves that merged migration unchanged and adds a forward hardening migration so the repository matches the final live RPC definition verified after the interrupted/restarted execution.
 
-## Studio route
+## Studio flow
 
-`/studio/content/new`
+`/studio/content/new` provides:
 
-The mobile-first form includes:
-
-1. active Content Type
-2. language (`en` or `hi`)
+1. active Content Type selection
+2. language selection: English or Hindi
 3. title
-4. optional manual slug, with Unicode-safe derivation from title when blank
+4. optional manual slug with Unicode-safe title fallback
 5. summary
-6. optional active Subjects (maximum 12 in this checkpoint)
-7. starter body text
+6. optional active Subjects
+7. starter body text converted to canonical structured paragraph blocks
 8. Save Draft
 
-## Structured body
+The Content library exposes a real `New draft` entry point and displays a success notice after creation.
 
-The starter body textarea is deliberately not stored as raw HTML.
+## Canonical body
 
-Paragraphs separated by blank lines are converted server-side into the existing Reader contract:
+Starter text is converted before persistence to the existing Reader-compatible shape:
 
 ```json
 {
@@ -45,98 +44,138 @@ Paragraphs separated by blank lines are converted server-side into the existing 
 }
 ```
 
-This is intentionally a narrow authoring surface. Rich block editing belongs to a later checkpoint and must continue to use the same canonical document schema.
+Blank-line-separated text becomes paragraph blocks. Raw HTML is not used as the canonical document format.
 
-## Transactional create RPC
+## Slug behavior
 
-Migration:
+Slug normalization:
 
-`supabase/migrations/20260822211500_phase10c_create_draft_rpc.sql`
+- uses the entered slug when present
+- otherwise derives from the title
+- normalizes Unicode with NFKC
+- preserves Unicode letters, numbers and combining marks, including Devanagari
+- converts route-breaking punctuation/spacing to hyphens
+- collapses duplicate hyphens
+- caps the result at 180 characters
 
-RPC:
+Draft slug uniqueness is still intentionally deferred to publication preflight.
 
-`public.create_content_draft(...)`
+## Transactional database write
 
-One call creates:
+Original merged migration:
+
+- `supabase/migrations/20260822211500_phase10c_create_draft_rpc.sql`
+
+Forward hardening migration:
+
+- `supabase/migrations/20260822213000_phase10c_create_draft_rpc_hardening.sql`
+
+The hardening migration uses `CREATE OR REPLACE FUNCTION`; it does not edit or remove the already-merged historical migration.
+
+The RPC is:
+
+- `public.create_content_draft(uuid,text,text,text,text,jsonb,uuid[])`
+
+One RPC call creates, in one transaction:
 
 - `contents`
 - `content_localizations`
 - `content_drafts`
-- zero or more `content_subjects`
+- optional `content_subjects` rows
 
-The function is `SECURITY INVOKER`, not `SECURITY DEFINER`.
+A failure at any point prevents a partial Content/Localization/Draft chain from being left behind.
 
-Therefore the authenticated caller still needs the existing table grants and must pass the Phase 10A RLS policies. The function cannot bypass Studio membership authorization.
+## Hardening changes
 
-Function execution is explicitly revoked from `public` and `anon`, then granted only to `authenticated`.
+The final live definition keeps the original `SECURITY INVOKER` model and tightens the server-side contract by:
 
-## Validation
+- explicitly rejecting route-breaking slug whitespace and `/ ? #`
+- de-duplicating Subject UUIDs before validation/insertion
+- validating the de-duplicated Subject set against active Subjects
+- keeping the Subject maximum at 12
+- retaining explicit top-level `schemaVersion = 1` body validation
+- preserving existing RLS as the authorization boundary
+- retaining explicit function privilege revocation/grant statements
 
-Both the Server Action and RPC enforce bounded input.
+## Security model
 
-Key checks:
+Verified properties of the final live RPC:
 
-- valid UUID Content Type
-- locale is `en|hi`
-- title 1–180 characters
-- non-empty normalized slug, maximum 180 characters
-- summary maximum 1200 characters
-- canonical body top-level shape
-- maximum 12 selected Subjects
-- selected Content Type must still be active
-- selected Subjects must still be active
+- `SECURITY DEFINER`: false
+- fixed empty `search_path`
+- caller permissions and existing RLS remain authoritative
+- `anon` EXECUTE: false
+- `PUBLIC` EXECUTE: false
+- `authenticated` EXECUTE: true
+- active Content Type is required
+- locale is limited to `en|hi`
+- title, slug, summary and body shape are revalidated inside Postgres
+- actor attribution continues through the existing Phase 10A audit triggers
+- no service-role key is used by Studio
 
-Database constraints remain the final canonical guardrail.
+Current Supabase guidance recommends `SECURITY INVOKER` for database functions and explicit function privileges; Phase 10C follows that model.
 
-## Slug behavior
+## Database verification — 2026-08-22
 
-If the slug field is blank, Studio derives it from the title.
+Verified against project `zdsanovvmmwfiqjjnxhr`:
 
-Normalization:
+- direct RPC return probe produced one `content_id` and one `localization_id`
+- permanent-function rollback probe returned one row
+- draft status was `draft`
+- Content, Localization and Draft actor attribution matched the active Studio admin
+- Hindi locale persisted correctly in the rollback probe
+- body retained `schemaVersion = 1`
+- authenticated non-member simulation was blocked from creating a draft
+- rollback probes left `contents = 0`, `content_localizations = 0`, `content_drafts = 0`, `content_subjects = 0`
+- exactly one live `create_content_draft(uuid,text,text,text,text,jsonb,uuid[])` function exists
 
-- Unicode NFKC
-- lowercase where applicable
-- keeps Unicode letters, numbers and combining marks
-- collapses separators to `-`
-- strips route-breaking punctuation
-- maximum 180 characters
+Security Advisor still reports the previously known project-level warning **Leaked Password Protection Disabled**. No new Phase 10C database-function/RLS warning was introduced.
 
-This supports English, Roman Hindi and Devanagari-safe working slugs.
+Performance Advisor reports only existing `unused_index` INFO notices on the new CMS tables. These indexes are retained because the CMS still has no real authoring rows and upcoming list/edit workflows are expected to use them.
 
-Draft slugs remain intentionally non-unique. Final `(locale, slug)` uniqueness stays a publication-preflight responsibility.
+## Migration-history bookkeeping
 
-## UX behavior
+The connected Supabase migration history contains two generated entries named `phase10c_create_draft_rpc`:
 
-- Save uses a React Server Action.
-- Pending state disables the Save button.
-- Validation errors stay on the create screen.
-- Successful save redirects to `/studio/content?created=1`.
-- The Content list shows a confirmation notice and the real new draft.
-- Empty Content library now links to Create First Draft.
-- No Edit link is introduced yet because editing is the next checkpoint.
+- `20260822151459 phase10c_create_draft_rpc`
+- `20260822153440 phase10c_create_draft_rpc`
 
-## Security boundaries
+This occurred across the interrupted/restarted Phase 10C execution. The first application activated the merged RPC and the later application used `CREATE OR REPLACE FUNCTION` to harden that same signature. Readback confirms exactly one live function object.
 
-Phase 10C does not introduce:
+The generated history rows are intentionally not deleted or rewritten. The repository preserves the original merged migration and records the final live definition as a new forward hardening migration, which is safer than rewriting applied history.
 
-- service-role/secret browser keys
-- anonymous CMS writes
-- `SECURITY DEFINER`
-- public Reader reads from draft tables
-- publish/schedule operations
-- revisions
-- media upload
+## Deliberately out of Phase 10C
+
+Not added here:
+
+- edit existing draft route
 - autosave
+- optimistic lock conflict UI
+- review-state controls
+- create/edit Subjects
+- publish/unpublish
+- scheduling
+- immutable revisions
+- media picker
+- AI drafting helper
+- public Reader/Search/Explore CMS cutover
 
-## Verification gate
+Those remain later checkpoints.
 
-Before merge to `staging`:
+## Repository acceptance gate
 
-1. rollback-only transactional RPC probe succeeds
-2. probe leaves zero permanent rows
-3. migration applies successfully
-4. active Studio admin can create through the RPC under authenticated RLS
-5. authenticated non-member cannot create
-6. security/performance advisors are reviewed
-7. repository format/lint/typecheck/tests/build pass
-8. `main` remains untouched
+Main Phase 10C:
+
+1. Create Draft workflow merged through PR #26 — PASS
+2. transactional RPC exists and security privileges are verified — PASS
+3. active Studio member rollback creation succeeds — PASS
+4. non-member creation is blocked — PASS
+5. rollback probes leave no fake rows — PASS
+
+Post-merge hardening:
+
+1. original applied migration remains preserved — PASS
+2. final live RPC is represented by a forward hardening migration — PASS
+3. Repository Verify passes for the reconciliation PR — PENDING
+4. merge to `staging` only after green CI — PENDING
+5. production `main` remains untouched — PASS

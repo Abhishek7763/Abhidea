@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 
 import { publicNav } from "@/features/website/site-content";
+import { MobileNavigation } from "./mobile-navigation";
 import { ThemeToggle } from "./theme-toggle";
 
 type PublicShellProps = Readonly<{
@@ -35,16 +36,7 @@ export function PublicShell({ children }: PublicShellProps) {
 
           <div className="header-actions">
             <ThemeToggle />
-            <details className="mobile-nav">
-              <summary aria-label="Open navigation menu">Menu</summary>
-              <nav aria-label="Mobile navigation" className="mobile-nav-panel">
-                {publicNav.map((item) => (
-                  <Link key={item.href} href={item.href} className="mobile-nav-link">
-                    {item.label}
-                  </Link>
-                ))}
-              </nav>
-            </details>
+            <MobileNavigation />
           </div>
         </div>
       </header>

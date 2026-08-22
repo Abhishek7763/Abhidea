@@ -66,8 +66,15 @@ export function StudioEditorForm({
   }
 
   function addBlock(type: StudioEditorBlockType) {
-    idCounter.current += 1;
-    const id = `edit-${Date.now().toString(36)}-${idCounter.current}`;
+    let sequence = idCounter.current;
+    let id = "";
+
+    do {
+      sequence += 1;
+      id = `edit-${sequence}`;
+    } while (blocks.some((block) => block.id === id));
+
+    idCounter.current = sequence;
     setBlocks((current) => [...current, createStudioEditorBlock(type, id)]);
   }
 

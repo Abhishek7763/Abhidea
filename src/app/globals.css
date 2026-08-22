@@ -6,6 +6,7 @@
 @import "../styles/public.css";
 @import "../styles/reader-core.css";
 @import "../styles/reader-controls.css";
+@import "../styles/reader-experience.css";
 
 @theme inline {
   --color-background: var(--background);

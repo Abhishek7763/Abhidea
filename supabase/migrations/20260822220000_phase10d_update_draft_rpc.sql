@@ -48,9 +48,10 @@ begin
     raise exception using errcode = '22023', message = 'Draft summary is too long.';
   end if;
 
-  if jsonb_typeof(p_body_json) <> 'object'
-     or p_body_json ->> 'schemaVersion' <> '1'
-     or jsonb_typeof(p_body_json -> 'blocks') <> 'array' then
+  if p_body_json is null
+     or jsonb_typeof(p_body_json) is distinct from 'object'
+     or (p_body_json ->> 'schemaVersion') is distinct from '1'
+     or jsonb_typeof(p_body_json -> 'blocks') is distinct from 'array' then
     raise exception using errcode = '22023', message = 'Draft body must use the ABHIDEA structured document schema.';
   end if;
 
@@ -61,7 +62,8 @@ begin
   if exists (
     select 1
     from jsonb_array_elements(p_body_json -> 'blocks') block
-    where jsonb_typeof(block) <> 'object'
+    where jsonb_typeof(block) is distinct from 'object'
+       or (block ->> 'type') is null
        or block ->> 'type' not in ('paragraph', 'heading', 'quote', 'list', 'callout', 'divider', 'closure')
   ) then
     raise exception using errcode = '22023', message = 'Draft body contains unsupported editor blocks.';

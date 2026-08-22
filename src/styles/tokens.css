@@ -132,7 +132,7 @@
   }
 }
 
-[data-reader-theme="comfort"] {
+:root[data-reader-theme="comfort"] {
   --reader-background: #f4ecd9;
   --reader-surface: #f8f1e2;
   --reader-text: #352f28;

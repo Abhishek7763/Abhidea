@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720" width="1280" height="720">
+  <rect width="1280" height="720" rx="36" fill="#f5f3ee"/>
+  <text x="640" y="105" text-anchor="middle" font-family="system-ui, sans-serif" font-size="34" font-weight="700" fill="#24211d">A simple learning loop</text>
+  <text x="640" y="150" text-anchor="middle" font-family="system-ui, sans-serif" font-size="20" fill="#6b655d">Question → Read → Explain → Connect → Revisit</text>
+  <g font-family="system-ui, sans-serif" font-size="24" font-weight="650" text-anchor="middle">
+    <rect x="80" y="290" width="190" height="112" rx="24" fill="#ffffff" stroke="#d4cec4" stroke-width="3"/>
+    <text x="175" y="355" fill="#24211d">Question</text>
+    <rect x="315" y="290" width="190" height="112" rx="24" fill="#ffffff" stroke="#d4cec4" stroke-width="3"/>
+    <text x="410" y="355" fill="#24211d">Read</text>
+    <rect x="550" y="290" width="190" height="112" rx="24" fill="#ede9ff" stroke="#8069e8" stroke-width="3"/>
+    <text x="645" y="355" fill="#30285e">Explain</text>
+    <rect x="785" y="290" width="190" height="112" rx="24" fill="#ffffff" stroke="#d4cec4" stroke-width="3"/>
+    <text x="880" y="355" fill="#24211d">Connect</text>
+    <rect x="1020" y="290" width="190" height="112" rx="24" fill="#ffffff" stroke="#d4cec4" stroke-width="3"/>
+    <text x="1115" y="355" fill="#24211d">Revisit</text>
+  </g>
+  <g fill="none" stroke="#8b8378" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M270 346h35"/><path d="m296 334 14 12-14 12"/>
+    <path d="M505 346h35"/><path d="m531 334 14 12-14 12"/>
+    <path d="M740 346h35"/><path d="m766 334 14 12-14 12"/>
+    <path d="M975 346h35"/><path d="m1001 334 14 12-14 12"/>
+    <path d="M1115 420c0 120-940 120-940 0"/>
+    <path d="m164 444 11-25 20 18"/>
+  </g>
+  <text x="640" y="575" text-anchor="middle" font-family="system-ui, sans-serif" font-size="21" fill="#6b655d">Return to the question with clearer understanding, then repeat.</text>
+</svg>

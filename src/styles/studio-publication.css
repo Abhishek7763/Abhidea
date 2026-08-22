@@ -114,9 +114,14 @@
   border-radius: var(--radius-md);
   background: var(--accent);
   padding: 0.7rem 0.9rem;
-  color: var(--accent-contrast);
+  color: var(--accent-foreground, #fff);
   font-weight: 850;
   cursor: pointer;
+}
+
+.studio-publish-form button:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--accent) 24%, transparent);
+  outline-offset: 2px;
 }
 
 .studio-publish-form button:disabled {

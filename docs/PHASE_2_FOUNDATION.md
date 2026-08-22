@@ -1,6 +1,6 @@
 # ABHIDEA Phase 2 — Repository / Tooling Foundation
 
-Status: Verification complete on `work/foundation`
+Status: PASS — tooling closeout complete
 Date: 2026-08-22
 
 ## Objective
@@ -33,10 +33,11 @@ ESLint 10 was tested first but rejected after the real CI run exposed incompatib
 - `.gitignore`
 - environment variable boundary documented in `.env.example`
 - minimal App Router root layout
-- temporary foundation homepage
 - baseline `not-found.tsx`
 - baseline `error.tsx`
-- GitHub Actions verification gate
+- GitHub Actions repository verification gate
+- zero-dependency format hygiene check
+- Node 24 built-in automated test baseline
 
 ## Environment boundary
 
@@ -49,34 +50,38 @@ Server secrets must not use the `NEXT_PUBLIC_` prefix and will only be introduce
 
 ## Verification gate
 
-The GitHub Actions foundation job executes:
+The repository verification workflow now executes:
 
 1. `npm ci`
-2. `npm run lint`
-3. `npm run typecheck`
-4. `npm run build`
+2. `npm run format:check`
+3. `npm run lint`
+4. `npm run typecheck`
+5. `npm test`
+6. `npm run build`
 
-A real CI failure was encountered with ESLint 10, diagnosed from the job logs, corrected to ESLint 9.39.5, and re-tested.
+The test baseline uses Node 24's built-in test runner and currently protects the ABHIDEA Reader document contract, including safe handling of malformed/unknown blocks, unsupported schema versions and duplicate heading IDs/TOC anchors. No additional testing package was introduced.
 
-After the compatibility correction the CI result was:
+The Phase 2 closeout CI result was:
 
 - dependency install: PASS
+- format check: PASS
 - lint: PASS
-- typecheck: PASS
+- strict typecheck: PASS
+- automated tests: PASS
 - Next.js production build: PASS
 
 ## Deployment safety
 
-Development work remains on `work/foundation`.
+`main` remains production-only.
 
-`staging` exists as the milestone integration branch.
+`staging` remains the milestone integration branch.
 
-No new Vercel deployment was created by the foundation work branch or its draft pull request during Phase 2 verification.
+`work/*` remains the active development branch family.
 
-`main` remains outside this development work and is not used for iterative foundation commits.
+The Phase 2 closeout introduced no Supabase schema/Auth/Storage changes and no runtime product feature.
 
 ## Phase 2 gate
 
-PASS once the final read-only CI run confirms the committed lockfile and current branch head.
+PASS.
 
-No Supabase production schema changes are part of Phase 2.
+The repository now has pinned dependencies, strict typing, linting, deterministic format hygiene, an automated test baseline and a production-build CI gate.

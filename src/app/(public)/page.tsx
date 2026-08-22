@@ -1,6 +1,6 @@
 import Link from "next/link";
 
-import { contentTypes, creatorProfile } from "@/features/website/site-content";
+import { contentTypes, creatorProfile, readerPreviewItems } from "@/features/website/site-content";
 
 export default function HomePage() {
   return (
@@ -28,10 +28,37 @@ export default function HomePage() {
 
           <aside className="hero-note" aria-label="ABHIDEA reading principle">
             <p className="hero-note-label">Reading principle</p>
-            <p>
-              A good reading experience should disappear behind the idea.
-            </p>
+            <p>A good reading experience should disappear behind the idea.</p>
           </aside>
+        </div>
+      </section>
+
+      <section className="container-page section-pad" aria-labelledby="featured-reading-heading">
+        <div className="section-heading-row">
+          <div>
+            <p className="text-meta">Available now</p>
+            <h2 id="featured-reading-heading" className="section-title">
+              Read inside ABHIDEA.
+            </h2>
+          </div>
+          <p className="section-copy">
+            These bilingual Reader previews are available for testing while the Studio publishing workflow is being built.
+          </p>
+        </div>
+
+        <div className="editorial-grid">
+          {readerPreviewItems.map((item, index) => (
+            <Link key={item.href} className="editorial-card" href={item.href}>
+              <span className="editorial-card-index">{String(index + 1).padStart(2, "0")}</span>
+              <div>
+                <p className="text-meta">
+                  {item.locale} · {item.contentType} · {item.readingTime}
+                </p>
+                <h3>{item.title}</h3>
+                <p>{item.summary}</p>
+              </div>
+            </Link>
+          ))}
         </div>
       </section>
 
@@ -39,7 +66,9 @@ export default function HomePage() {
         <div className="section-heading-row">
           <div>
             <p className="text-meta">Knowledge formats</p>
-            <h2 id="formats-heading" className="section-title">Different ways to learn.</h2>
+            <h2 id="formats-heading" className="section-title">
+              Different ways to learn.
+            </h2>
           </div>
           <p className="section-copy">
             Long-form explanations, compact facts, book learning, practical guides and reflective ideas all live in one structured library.
@@ -70,9 +99,7 @@ export default function HomePage() {
           </div>
 
           <div className="reader-promise-card">
-            <p>
-              The goal is not to make reading feel impressive. It is to make the idea easier to follow, question and remember.
-            </p>
+            <p>The goal is not to make reading feel impressive. It is to make the idea easier to follow, question and remember.</p>
             <p lang="hi">
               उद्देश्य पढ़ने को दिखावटी बनाना नहीं, बल्कि विचार को समझना, उस पर सोचना और उसे याद रखना आसान बनाना है।
             </p>
@@ -81,10 +108,14 @@ export default function HomePage() {
       </section>
 
       <section className="container-page section-pad creator-teaser" aria-labelledby="creator-heading">
-        <div className="creator-monogram" aria-hidden="true">AB</div>
+        <div className="creator-monogram" aria-hidden="true">
+          AB
+        </div>
         <div>
           <p className="text-meta">{creatorProfile.label}</p>
-          <h2 id="creator-heading" className="section-title">{creatorProfile.headline}</h2>
+          <h2 id="creator-heading" className="section-title">
+            {creatorProfile.headline}
+          </h2>
           <p className="section-copy">{creatorProfile.intro}</p>
           <div className="hero-actions">
             <Link className="button button-secondary" href="/about">

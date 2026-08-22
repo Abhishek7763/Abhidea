@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
-import { contentTypes } from "@/features/website/site-content";
+import { contentTypes, readerPreviewItems } from "@/features/website/site-content";
 
 type HubPageProps = Readonly<{
   params: Promise<{ slug: string }>;
@@ -31,6 +31,8 @@ export default async function ContentTypeHubPage({ params }: HubPageProps) {
   const type = findType(slug);
   if (!type) notFound();
 
+  const matchingReads = readerPreviewItems.filter((item) => item.contentTypeSlug === type.slug);
+
   return (
     <div className="container-page">
       <section className="page-hero">
@@ -40,16 +42,46 @@ export default async function ContentTypeHubPage({ params }: HubPageProps) {
       </section>
 
       <section className="section-pad pt-0">
-        <div className="empty-library">
-          <h2>No published {type.label.toLowerCase()} yet.</h2>
-          <p>
-            This hub is ready and will fill automatically as matching knowledge is published.
-          </p>
-          <div className="hero-actions">
-            <Link className="button button-secondary" href="/explore">Back to Explore</Link>
-            <Link className="button button-ghost" href="/search">Search ABHIDEA</Link>
+        {matchingReads.length > 0 ? (
+          <>
+            <div className="section-heading-row">
+              <div>
+                <p className="text-meta">Reader previews</p>
+                <h2 className="section-title">Available to read now.</h2>
+              </div>
+              <p className="section-copy">
+                These items are visible test content until Studio publishing becomes the permanent content source.
+              </p>
+            </div>
+            <div className="editorial-grid">
+              {matchingReads.map((item, index) => (
+                <Link key={item.href} className="editorial-card" href={item.href}>
+                  <span className="editorial-card-index">{String(index + 1).padStart(2, "0")}</span>
+                  <div>
+                    <p className="text-meta">
+                      {item.locale} · {item.readingTime}
+                    </p>
+                    <h3>{item.title}</h3>
+                    <p>{item.summary}</p>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </>
+        ) : (
+          <div className="empty-library">
+            <h2>No published {type.label.toLowerCase()} yet.</h2>
+            <p>This hub is ready and will fill automatically as matching knowledge is published.</p>
+            <div className="hero-actions">
+              <Link className="button button-secondary" href="/explore">
+                Back to Explore
+              </Link>
+              <Link className="button button-ghost" href="/search">
+                Search ABHIDEA
+              </Link>
+            </div>
           </div>
-        </div>
+        )}
       </section>
     </div>
   );

@@ -50,9 +50,14 @@ export default async function StudioDraftEditPage({ params, searchParams }: Stud
           <p className="studio-kicker">Content workflow</p>
           <h1 className="studio-title">Edit draft</h1>
         </div>
-        <Link className="studio-content-secondary-link" href="/studio/content">
-          Back to content
-        </Link>
+        <div className="studio-content-filter-actions">
+          <Link className="studio-content-secondary-link" href={`/studio/content/${draft.localizationId}/preview`}>
+            Preview draft
+          </Link>
+          <Link className="studio-content-secondary-link" href="/studio/content">
+            Back to content
+          </Link>
+        </div>
       </header>
 
       {linked ? (

@@ -13,6 +13,7 @@
 @import "../styles/studio-content.css";
 @import "../styles/studio-editor.css";
 @import "../styles/studio-preview.css";
+@import "../styles/studio-publication.css";
 
 @theme inline {
   --color-background: var(--background);

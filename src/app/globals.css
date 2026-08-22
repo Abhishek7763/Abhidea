@@ -5,6 +5,7 @@
 @import "../styles/motion.css";
 @import "../styles/public.css";
 @import "../styles/reader-core.css";
+@import "../styles/reader-controls.css";
 
 @theme inline {
   --color-background: var(--background);

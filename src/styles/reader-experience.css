@@ -1,0 +1,183 @@
+.reader-progress-track {
+  position: fixed;
+  inset: 0 0 auto;
+  z-index: 90;
+  height: 3px;
+  background: color-mix(in srgb, var(--reader-border) 70%, transparent);
+  pointer-events: none;
+}
+
+.reader-progress-track > span {
+  display: block;
+  width: 0;
+  height: 100%;
+  background: var(--accent);
+  transition: width 120ms linear;
+}
+
+.reader-experience {
+  display: grid;
+  gap: 0.85rem;
+  width: 100%;
+  border: 1px solid var(--reader-border);
+  border-radius: var(--radius-lg);
+  background: var(--reader-surface);
+  padding: 1rem;
+  color: var(--reader-text);
+  font-family: var(--font-ui), var(--font-devanagari-sans), system-ui, sans-serif;
+}
+
+.reader-experience-heading {
+  display: grid;
+  gap: 0.15rem;
+}
+
+.reader-experience-heading > div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.reader-experience-heading span {
+  font-size: 0.8rem;
+  font-weight: 800;
+}
+
+.reader-experience-heading strong {
+  color: var(--reader-link);
+  font-size: 0.8rem;
+}
+
+.reader-experience-heading small,
+.reader-speech-meta,
+.reader-speech-fallback {
+  color: var(--reader-text-secondary);
+  font-size: 0.72rem;
+  line-height: 1.5;
+}
+
+.reader-playback-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.45rem;
+}
+
+.reader-playback-primary,
+.reader-playback-stop,
+.reader-follow-toggle,
+.reader-share-button,
+.reader-rate-control button {
+  min-height: 42px;
+  border: 1px solid var(--reader-border);
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--reader-text);
+  cursor: pointer;
+  font-size: 0.76rem;
+  font-weight: 750;
+}
+
+.reader-playback-primary,
+.reader-playback-stop,
+.reader-follow-toggle,
+.reader-share-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  padding-inline: 0.75rem;
+}
+
+.reader-playback-primary {
+  border-color: color-mix(in srgb, var(--reader-link) 55%, var(--reader-border));
+  background: color-mix(in srgb, var(--reader-link) 10%, transparent);
+  color: var(--reader-link);
+}
+
+.reader-playback-primary:hover,
+.reader-playback-stop:hover,
+.reader-follow-toggle:hover,
+.reader-share-button:hover,
+.reader-rate-control button:hover {
+  border-color: var(--reader-link);
+  color: var(--reader-link);
+}
+
+.reader-playback-primary:disabled,
+.reader-playback-stop:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.reader-speech-meta {
+  display: grid;
+  gap: 0.15rem;
+  min-height: 1.2rem;
+}
+
+.reader-speech-options {
+  display: grid;
+  gap: 0.55rem;
+}
+
+.reader-rate-control {
+  display: grid;
+  gap: 0.4rem;
+}
+
+.reader-rate-control > span {
+  color: var(--reader-text-secondary);
+  font-size: 0.7rem;
+  font-weight: 700;
+}
+
+.reader-rate-control > div {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.35rem;
+}
+
+.reader-rate-control button[aria-pressed="true"],
+.reader-follow-toggle[aria-pressed="true"] {
+  border-color: var(--reader-link);
+  background: color-mix(in srgb, var(--reader-link) 12%, transparent);
+  color: var(--reader-link);
+}
+
+.reader-share-button {
+  width: 100%;
+  border-style: dashed;
+  color: var(--reader-text-secondary);
+}
+
+.reader-speech-fallback {
+  margin: 0;
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--warning-soft) 65%, transparent);
+  padding: 0.8rem;
+}
+
+.reader-audio-active {
+  border-radius: 0.35rem;
+  background: color-mix(in srgb, var(--accent-soft) 48%, transparent);
+  box-shadow: 0 0 0 0.32rem color-mix(in srgb, var(--accent-soft) 48%, transparent);
+  transition: background-color var(--motion-base) var(--ease-standard), box-shadow var(--motion-base) var(--ease-standard);
+}
+
+@media (max-width: 720px) {
+  .reader-playback-primary,
+  .reader-playback-stop,
+  .reader-follow-toggle,
+  .reader-share-button,
+  .reader-rate-control button {
+    min-height: 44px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reader-progress-track > span,
+  .reader-audio-active {
+    transition: none;
+  }
+}

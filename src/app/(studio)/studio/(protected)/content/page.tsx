@@ -22,11 +22,17 @@ function formatUpdatedAt(value: string): string {
   }).format(date);
 }
 
+function firstSearchValue(value: string | string[] | undefined): string | undefined {
+  return Array.isArray(value) ? value[0] : value;
+}
+
 export default async function StudioContentPage({ searchParams }: StudioContentPageProps) {
-  const requestedFilters = normalizeStudioContentFilters(await searchParams);
+  const rawSearchParams = await searchParams;
+  const requestedFilters = normalizeStudioContentFilters(rawSearchParams);
   const data = await loadStudioContentList(requestedFilters);
   const activeFilters = hasActiveStudioContentFilters(data.filters);
   const filteredCount = data.items.length;
+  const draftCreated = firstSearchValue(rawSearchParams.created) === "1";
 
   return (
     <main>
@@ -38,12 +44,26 @@ export default async function StudioContentPage({ searchParams }: StudioContentP
         <span className="studio-status">CMS connected</span>
       </header>
 
+      {draftCreated ? (
+        <div className="studio-content-notice" role="status">
+          <strong>Draft saved.</strong>
+          <span>The new localized draft is private and now appears in this library.</span>
+        </div>
+      ) : null}
+
       <section className="studio-panel studio-content-toolbar" aria-labelledby="draft-library-heading">
         <div className="studio-content-intro">
-          <p className="studio-kicker">Draft library</p>
-          <h2 id="draft-library-heading">Manage localized drafts</h2>
+          <div className="studio-content-intro-heading">
+            <div>
+              <p className="studio-kicker">Draft library</p>
+              <h2 id="draft-library-heading">Manage localized drafts</h2>
+            </div>
+            <Link className="studio-content-primary-link" href="/studio/content/new">
+              New draft
+            </Link>
+          </div>
           <p>
-            This list reads the private Phase 10 CMS through your Studio session and database RLS. Creation and editing open in the next checkpoint.
+            Create and filter private CMS drafts through your Studio session and database RLS. Editing opens in the next controlled checkpoint.
           </p>
         </div>
 
@@ -102,11 +122,12 @@ export default async function StudioContentPage({ searchParams }: StudioContentP
 
         {data.sourceCount === 0 ? (
           <div className="studio-panel studio-content-empty">
-            <p className="studio-kicker">Ready for Phase 10C</p>
+            <p className="studio-kicker">Create the first edition</p>
             <h2>No drafts yet</h2>
-            <p>
-              The permanent CMS is connected and ready. The next checkpoint adds the New Content flow and Save Draft action.
-            </p>
+            <p>The CMS is connected and ready for a private English or Hindi draft.</p>
+            <Link className="studio-content-primary-link" href="/studio/content/new">
+              Create first draft
+            </Link>
           </div>
         ) : filteredCount === 0 ? (
           <div className="studio-panel studio-content-empty">

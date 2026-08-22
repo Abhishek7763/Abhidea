@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useActionState, useRef, useState } from "react";
 
 import { updateStudioDraftAction } from "@/app/(studio)/studio/(protected)/content/actions";
+import type { StudioEditorialStatus } from "@/features/studio-content-model";
 import {
   createStudioEditorBlock,
   serializeStudioEditorDocument,
@@ -14,11 +15,7 @@ import {
   type StudioEditorBlockType,
 } from "@/features/studio-editor-model";
 
-const INITIAL_STATE: StudioDraftUpdateState = {
-  status: "idle",
-  message: "",
-  fieldErrors: {},
-};
+const INITIAL_STATE: StudioDraftUpdateState = { status: "idle", message: "", fieldErrors: {} };
 
 const BLOCK_LABELS: Record<StudioEditorBlockType, string> = {
   paragraph: "Paragraph",
@@ -36,6 +33,7 @@ type StudioEditorFormProps = Readonly<{
   title: string;
   slug: string;
   summary: string;
+  status: StudioEditorialStatus;
   document: StudioEditableDocument;
 }>;
 
@@ -49,14 +47,7 @@ function FieldError({ message }: Readonly<{ message?: string }>) {
   return message ? <span className="studio-draft-field-error">{message}</span> : null;
 }
 
-export function StudioEditorForm({
-  localizationId,
-  lockVersion,
-  title,
-  slug,
-  summary,
-  document,
-}: StudioEditorFormProps) {
+export function StudioEditorForm({ localizationId, lockVersion, title, slug, summary, status, document }: StudioEditorFormProps) {
   const [state, formAction, isPending] = useActionState(updateStudioDraftAction, INITIAL_STATE);
   const [blocks, setBlocks] = useState<StudioEditableBlock[]>(() => cloneBlocks(document));
   const idCounter = useRef(0);
@@ -68,12 +59,10 @@ export function StudioEditorForm({
   function addBlock(type: StudioEditorBlockType) {
     let sequence = idCounter.current;
     let id = "";
-
     do {
       sequence += 1;
       id = `edit-${sequence}`;
     } while (blocks.some((block) => block.id === id));
-
     idCounter.current = sequence;
     setBlocks((current) => [...current, createStudioEditorBlock(type, id)]);
   }
@@ -99,11 +88,7 @@ export function StudioEditorForm({
       <input type="hidden" name="documentJson" value={serializeStudioEditorDocument(blocks)} />
 
       {state.status !== "idle" ? (
-        <div
-          className="studio-draft-form-error"
-          data-kind={state.status}
-          role={state.status === "conflict" ? "alert" : "status"}
-        >
+        <div className="studio-draft-form-error" data-kind={state.status} role={state.status === "conflict" ? "alert" : "status"}>
           {state.message}
         </div>
       ) : null}
@@ -112,10 +97,19 @@ export function StudioEditorForm({
         <div>
           <p className="studio-kicker">Draft details</p>
           <h2 id="editor-details-heading">Identity for this edition</h2>
-          <p>Title, slug and summary stay private until a later publish workflow explicitly makes them live.</p>
+          <p>Save the editorial state as Ready only when this saved draft is ready to pass publish preflight.</p>
         </div>
 
         <div className="studio-draft-fields">
+          <label>
+            <span>Editorial state</span>
+            <select name="editorialStatus" defaultValue={status}>
+              <option value="draft">Draft</option>
+              <option value="needs_review">Needs review</option>
+              <option value="ready">Ready</option>
+            </select>
+            <FieldError message={state.fieldErrors.editorialStatus} />
+          </label>
           <label>
             <span>Title</span>
             <input name="title" type="text" defaultValue={title} maxLength={180} required />
@@ -123,16 +117,7 @@ export function StudioEditorForm({
           </label>
           <label>
             <span>Slug</span>
-            <input
-              name="slug"
-              type="text"
-              defaultValue={slug}
-              maxLength={180}
-              autoCapitalize="none"
-              autoCorrect="off"
-              spellCheck={false}
-              required
-            />
+            <input name="slug" type="text" defaultValue={slug} maxLength={180} autoCapitalize="none" autoCorrect="off" spellCheck={false} required />
             <FieldError message={state.fieldErrors.slug} />
           </label>
           <label>
@@ -162,228 +147,62 @@ export function StudioEditorForm({
         </div>
 
         {blocks.length === 0 ? (
-          <div className="studio-panel studio-draft-inline-empty">
-            This draft has no body blocks yet. Add a Paragraph, Heading, List or another supported block above.
-          </div>
+          <div className="studio-panel studio-draft-inline-empty">This draft has no body blocks yet. Add a Paragraph, Heading, List or another supported block above.</div>
         ) : (
           <div className="studio-editor-blocks">
             {blocks.map((block, index) => (
               <article className="studio-editor-block" key={block.id}>
                 <header>
-                  <div>
-                    <span>{index + 1}</span>
-                    <strong>{BLOCK_LABELS[block.type]}</strong>
-                  </div>
+                  <div><span>{index + 1}</span><strong>{BLOCK_LABELS[block.type]}</strong></div>
                   <div className="studio-editor-block-actions">
-                    <button type="button" onClick={() => moveBlock(index, -1)} disabled={index === 0} aria-label="Move block up">
-                      ↑
-                    </button>
-                    <button type="button" onClick={() => moveBlock(index, 1)} disabled={index === blocks.length - 1} aria-label="Move block down">
-                      ↓
-                    </button>
-                    <button type="button" onClick={() => removeBlock(block.id)} aria-label="Delete block">
-                      Delete
-                    </button>
+                    <button type="button" onClick={() => moveBlock(index, -1)} disabled={index === 0} aria-label="Move block up">↑</button>
+                    <button type="button" onClick={() => moveBlock(index, 1)} disabled={index === blocks.length - 1} aria-label="Move block down">↓</button>
+                    <button type="button" onClick={() => removeBlock(block.id)} aria-label="Delete block">Delete</button>
                   </div>
                 </header>
 
-                {block.type === "paragraph" ? (
-                  <textarea
-                    aria-label="Paragraph text"
-                    rows={6}
-                    value={block.text}
-                    onChange={(event) =>
-                      replaceBlock(block.id, (current) =>
-                        current.type === "paragraph" ? { ...current, text: event.target.value } : current,
-                      )
-                    }
-                  />
-                ) : null}
+                {block.type === "paragraph" ? <textarea aria-label="Paragraph text" rows={6} value={block.text} onChange={(event) => replaceBlock(block.id, (current) => current.type === "paragraph" ? { ...current, text: event.target.value } : current)} /> : null}
 
                 {block.type === "heading" ? (
                   <div className="studio-editor-grid">
-                    <label>
-                      <span>Level</span>
-                      <select
-                        value={block.level}
-                        onChange={(event) =>
-                          replaceBlock(block.id, (current) =>
-                            current.type === "heading"
-                              ? { ...current, level: event.target.value === "3" ? 3 : 2 }
-                              : current,
-                          )
-                        }
-                      >
-                        <option value="2">Heading 2</option>
-                        <option value="3">Heading 3</option>
-                      </select>
-                    </label>
-                    <label>
-                      <span>Heading text</span>
-                      <input
-                        value={block.text}
-                        onChange={(event) =>
-                          replaceBlock(block.id, (current) =>
-                            current.type === "heading" ? { ...current, text: event.target.value } : current,
-                          )
-                        }
-                      />
-                    </label>
+                    <label><span>Level</span><select value={block.level} onChange={(event) => replaceBlock(block.id, (current) => current.type === "heading" ? { ...current, level: event.target.value === "3" ? 3 : 2 } : current)}><option value="2">Heading 2</option><option value="3">Heading 3</option></select></label>
+                    <label><span>Heading text</span><input value={block.text} onChange={(event) => replaceBlock(block.id, (current) => current.type === "heading" ? { ...current, text: event.target.value } : current)} /></label>
                   </div>
                 ) : null}
 
                 {block.type === "quote" ? (
                   <div className="studio-editor-stack">
-                    <textarea
-                      aria-label="Quote text"
-                      rows={5}
-                      value={block.text}
-                      onChange={(event) =>
-                        replaceBlock(block.id, (current) =>
-                          current.type === "quote" ? { ...current, text: event.target.value } : current,
-                        )
-                      }
-                    />
-                    <input
-                      aria-label="Quote attribution"
-                      placeholder="Attribution (optional)"
-                      value={block.attribution ?? ""}
-                      onChange={(event) =>
-                        replaceBlock(block.id, (current) =>
-                          current.type === "quote" ? { ...current, attribution: event.target.value } : current,
-                        )
-                      }
-                    />
+                    <textarea aria-label="Quote text" rows={5} value={block.text} onChange={(event) => replaceBlock(block.id, (current) => current.type === "quote" ? { ...current, text: event.target.value } : current)} />
+                    <input aria-label="Quote attribution" placeholder="Attribution (optional)" value={block.attribution ?? ""} onChange={(event) => replaceBlock(block.id, (current) => current.type === "quote" ? { ...current, attribution: event.target.value } : current)} />
                   </div>
                 ) : null}
 
                 {block.type === "list" ? (
                   <div className="studio-editor-stack">
-                    <select
-                      aria-label="List style"
-                      value={block.style}
-                      onChange={(event) =>
-                        replaceBlock(block.id, (current) =>
-                          current.type === "list"
-                            ? { ...current, style: event.target.value === "ordered" ? "ordered" : "unordered" }
-                            : current,
-                        )
-                      }
-                    >
-                      <option value="unordered">Bulleted list</option>
-                      <option value="ordered">Numbered list</option>
-                    </select>
-                    <textarea
-                      aria-label="List items"
-                      rows={6}
-                      value={block.items.join("\n")}
-                      onChange={(event) =>
-                        replaceBlock(block.id, (current) =>
-                          current.type === "list" ? { ...current, items: event.target.value.split("\n") } : current,
-                        )
-                      }
-                      placeholder="One item per line"
-                    />
+                    <select aria-label="List style" value={block.style} onChange={(event) => replaceBlock(block.id, (current) => current.type === "list" ? { ...current, style: event.target.value === "ordered" ? "ordered" : "unordered" } : current)}><option value="unordered">Bulleted list</option><option value="ordered">Numbered list</option></select>
+                    <textarea aria-label="List items" rows={6} value={block.items.join("\n")} onChange={(event) => replaceBlock(block.id, (current) => current.type === "list" ? { ...current, items: event.target.value.split("\n") } : current)} placeholder="One item per line" />
                   </div>
                 ) : null}
 
                 {block.type === "callout" ? (
                   <div className="studio-editor-stack">
                     <div className="studio-editor-grid">
-                      <label>
-                        <span>Tone</span>
-                        <select
-                          value={block.tone}
-                          onChange={(event) =>
-                            replaceBlock(block.id, (current) => {
-                              if (current.type !== "callout") return current;
-                              const tone = event.target.value;
-                              return {
-                                ...current,
-                                tone: tone === "key-idea" || tone === "warning" ? tone : "note",
-                              };
-                            })
-                          }
-                        >
-                          <option value="note">Note</option>
-                          <option value="key-idea">Key idea</option>
-                          <option value="warning">Warning</option>
-                        </select>
-                      </label>
-                      <label>
-                        <span>Title</span>
-                        <input
-                          value={block.title ?? ""}
-                          onChange={(event) =>
-                            replaceBlock(block.id, (current) =>
-                              current.type === "callout" ? { ...current, title: event.target.value } : current,
-                            )
-                          }
-                          placeholder="Optional"
-                        />
-                      </label>
+                      <label><span>Tone</span><select value={block.tone} onChange={(event) => replaceBlock(block.id, (current) => { if (current.type !== "callout") return current; const tone = event.target.value; return { ...current, tone: tone === "key-idea" || tone === "warning" ? tone : "note" }; })}><option value="note">Note</option><option value="key-idea">Key idea</option><option value="warning">Warning</option></select></label>
+                      <label><span>Title</span><input value={block.title ?? ""} onChange={(event) => replaceBlock(block.id, (current) => current.type === "callout" ? { ...current, title: event.target.value } : current)} placeholder="Optional" /></label>
                     </div>
-                    <textarea
-                      aria-label="Callout text"
-                      rows={5}
-                      value={block.text}
-                      onChange={(event) =>
-                        replaceBlock(block.id, (current) =>
-                          current.type === "callout" ? { ...current, text: event.target.value } : current,
-                        )
-                      }
-                    />
+                    <textarea aria-label="Callout text" rows={5} value={block.text} onChange={(event) => replaceBlock(block.id, (current) => current.type === "callout" ? { ...current, text: event.target.value } : current)} />
                   </div>
                 ) : null}
 
-                {block.type === "divider" ? (
-                  <p className="studio-editor-divider-note">Reader divider — no text content.</p>
-                ) : null}
+                {block.type === "divider" ? <p className="studio-editor-divider-note">Reader divider — no text content.</p> : null}
 
                 {block.type === "closure" ? (
                   <div className="studio-editor-stack">
                     <div className="studio-editor-grid">
-                      <label>
-                        <span>Variant</span>
-                        <select
-                          value={block.variant}
-                          onChange={(event) =>
-                            replaceBlock(block.id, (current) =>
-                              current.type === "closure"
-                                ? {
-                                    ...current,
-                                    variant: event.target.value === "abhidea-take" ? "abhidea-take" : "conclusion",
-                                  }
-                                : current,
-                            )
-                          }
-                        >
-                          <option value="conclusion">Conclusion</option>
-                          <option value="abhidea-take">ABHIDEA&apos;s Take</option>
-                        </select>
-                      </label>
-                      <label>
-                        <span>Title</span>
-                        <input
-                          value={block.title}
-                          onChange={(event) =>
-                            replaceBlock(block.id, (current) =>
-                              current.type === "closure" ? { ...current, title: event.target.value } : current,
-                            )
-                          }
-                        />
-                      </label>
+                      <label><span>Variant</span><select value={block.variant} onChange={(event) => replaceBlock(block.id, (current) => current.type === "closure" ? { ...current, variant: event.target.value === "abhidea-take" ? "abhidea-take" : "conclusion" } : current)}><option value="conclusion">Conclusion</option><option value="abhidea-take">ABHIDEA&apos;s Take</option></select></label>
+                      <label><span>Title</span><input value={block.title} onChange={(event) => replaceBlock(block.id, (current) => current.type === "closure" ? { ...current, title: event.target.value } : current)} /></label>
                     </div>
-                    <textarea
-                      aria-label="Closure text"
-                      rows={6}
-                      value={block.text}
-                      onChange={(event) =>
-                        replaceBlock(block.id, (current) =>
-                          current.type === "closure" ? { ...current, text: event.target.value } : current,
-                        )
-                      }
-                    />
+                    <textarea aria-label="Closure text" rows={6} value={block.text} onChange={(event) => replaceBlock(block.id, (current) => current.type === "closure" ? { ...current, text: event.target.value } : current)} />
                   </div>
                 ) : null}
               </article>
@@ -394,16 +213,8 @@ export function StudioEditorForm({
       </section>
 
       <div className="studio-draft-savebar">
-        <div>
-          <strong>Explicit private save</strong>
-          <span>Lock version {lockVersion}. No autosave or publishing runs in Phase 10D.</span>
-        </div>
-        <div className="studio-draft-save-actions">
-          <Link href="/studio/content">Back</Link>
-          <button type="submit" disabled={isPending}>
-            {isPending ? "Saving…" : "Save draft"}
-          </button>
-        </div>
+        <div><strong>Explicit private save</strong><span>Lock version {lockVersion}. Saving remains private; Publish is a separate explicit action after reload.</span></div>
+        <div className="studio-draft-save-actions"><Link href="/studio/content">Back</Link><button type="submit" disabled={isPending}>{isPending ? "Saving…" : "Save draft"}</button></div>
       </div>
     </form>
   );

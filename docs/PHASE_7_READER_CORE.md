@@ -1,7 +1,7 @@
 # ABHIDEA — Phase 7 Signature Reader Core
 
 Date: 22 August 2026
-Status: IMPLEMENTATION COMPLETE — VERIFICATION PENDING
+Status: VISUAL QA PASS — RELEASE VERIFICATION PENDING
 
 ## Objective
 
@@ -34,6 +34,7 @@ Safety behavior:
 - malformed blocks are ignored safely
 - unsupported/malformed documents render a generic non-destructive fallback
 - missing figure media renders a safe text fallback
+- duplicate block IDs are deterministically de-duplicated so generated DOM/TOC anchors remain unique
 
 ## Reader core implemented
 
@@ -53,6 +54,7 @@ Safety behavior:
 - canonical and language-alternate metadata for QA fixtures
 - keyboard-focus-compatible links and landmarks
 - reduced-motion inherits the global design-system contract
+- unsafe/non-HTTP source URLs are not emitted as clickable links
 
 ## QA fixtures
 
@@ -83,21 +85,32 @@ Not included because it belongs to later backend/CMS phases:
 - publishing workflow
 - media library upload/resolution service
 
-## Gate
+A granular loading indicator is also intentionally deferred until real asynchronous content/data boundaries exist. A broad Public loading boundary is not reintroduced because it previously masked `notFound()` HTTP semantics.
 
-Before Phase 7 becomes PASS:
-- [ ] dependency install passes
-- [ ] lint passes
-- [ ] strict typecheck passes
-- [ ] production build passes
-- [ ] English QA Reader renders successfully
-- [ ] Hindi QA Reader renders successfully
-- [ ] language switch resolves correctly
-- [ ] unknown Reader slug remains HTTP 404
-- [ ] mobile-size English visual review
-- [ ] mobile-size Hindi/Devanagari visual review
-- [ ] desktop Reader visual review
-- [ ] figure is responsive and has useful alt text
-- [ ] TOC, Sources, closures and Related Knowledge are usable
+## Gate evidence
 
-Phase 7 becomes PASS only after these checks succeed.
+Technical verification:
+- [x] dependency install passes
+- [x] format hygiene passes
+- [x] lint passes
+- [x] strict typecheck passes
+- [x] automated Reader structured-document tests pass
+- [x] production build passes
+- [x] English and Hindi Reader routes are present in the successful Vercel preview build output
+- [x] figure uses responsive `next/image` rendering with useful alt text in the fixture contract
+
+Owner visual QA on 22 August 2026:
+- [x] English QA Reader visual review
+- [x] Hindi/Devanagari QA Reader visual review
+- [x] language-switch experience approved
+- [x] responsive Reader presentation approved
+- [x] TOC, figure, Sources, ABHIDEA's Take, Conclusion and Related Knowledge approved
+
+Release verification still required before final PASS:
+- [ ] release PR from `staging` to `main` passes the full repository gate
+- [ ] production English QA Reader returns HTTP 200
+- [ ] production Hindi QA Reader returns HTTP 200
+- [ ] production unknown Reader slug returns real HTTP 404 with noindex behavior
+- [ ] production release is READY on the canonical ABHIDEA Vercel project
+
+Phase 7 becomes final PASS only after those production checks succeed.

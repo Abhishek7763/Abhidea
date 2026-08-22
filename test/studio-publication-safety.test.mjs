@@ -12,6 +12,11 @@ const migrationUrl = new URL(
   import.meta.url,
 );
 
+const hardeningUrl = new URL(
+  "../supabase/migrations/20260823044500_phase11a_publication_safety_hardening.sql",
+  import.meta.url,
+);
+
 const editPageUrl = new URL(
   "../src/app/(studio)/studio/(protected)/content/[localizationId]/edit/page.tsx",
   import.meta.url,
@@ -59,6 +64,16 @@ test("Phase 11A schema keeps revisions immutable and exposes no publication writ
   assert.doesNotMatch(sql, /grant[^;]*insert[^;]*content_revisions/i);
   assert.doesNotMatch(sql, /grant[^;]*insert[^;]*published_localizations/i);
   assert.match(sql, /publication_state = 'published'/i);
+});
+
+test("Phase 11A hardening avoids overlapping authenticated SELECT policies", async () => {
+  const sql = await readFile(hardeningUrl, "utf8");
+
+  assert.match(sql, /to anon\s+using \(publication_state = 'published'\)/i);
+  assert.match(sql, /to authenticated\s+using \(/i);
+  assert.match(sql, /publication_state = 'published'\s+or exists/i);
+  assert.match(sql, /published_localizations_revision_localization_idx/i);
+  assert.match(sql, /content_revisions_created_by_idx/i);
 });
 
 test("Studio editor explains draft/live separation without exposing a publish action", async () => {

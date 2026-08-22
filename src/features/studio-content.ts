@@ -7,6 +7,8 @@ import {
   type StudioContentFilters,
   type StudioContentListItem,
   type StudioContentTypeOption,
+  type StudioDraftCreateInput,
+  type StudioSubjectOption,
 } from "@/features/studio-content-model";
 
 const ACCESS_COOKIE = "abhidea-studio-access";
@@ -21,12 +23,32 @@ type StudioContentListData = Readonly<{
   isTruncated: boolean;
 }>;
 
+export type StudioDraftCreateOptions = Readonly<{
+  contentTypes: readonly StudioContentTypeOption[];
+  subjects: readonly StudioSubjectOption[];
+}>;
+
+export type StudioDraftCreateResult = Readonly<{
+  contentId: string;
+  localizationId: string;
+}>;
+
 type RestRowsResult = Readonly<{
   rows: unknown[];
   totalCount: number | null;
 }>;
 
 type UnknownRecord = Record<string, unknown>;
+
+export class StudioContentRequestError extends Error {
+  readonly status: number;
+
+  constructor(message: string, status: number) {
+    super(message);
+    this.name = "StudioContentRequestError";
+    this.status = status;
+  }
+}
 
 function isRecord(value: unknown): value is UnknownRecord {
   return typeof value === "object" && value !== null && !Array.isArray(value);
@@ -85,7 +107,10 @@ async function fetchStudioRows(
   });
 
   if (!response.ok) {
-    throw new Error(`Studio CMS request failed with status ${response.status}.`);
+    throw new StudioContentRequestError(
+      `Studio CMS request failed with status ${response.status}.`,
+      response.status,
+    );
   }
 
   const payload: unknown = await response.json();
@@ -99,7 +124,39 @@ async function fetchStudioRows(
   };
 }
 
+async function callStudioRpc(endpoint: URL, accessToken: string, body: unknown): Promise<unknown> {
+  const { publishableKey } = getSupabaseConfig();
+  const response = await fetch(endpoint, {
+    method: "POST",
+    headers: {
+      apikey: publishableKey,
+      Authorization: `Bearer ${accessToken}`,
+      Accept: "application/json",
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(body),
+    cache: "no-store",
+  });
+
+  if (!response.ok) {
+    throw new StudioContentRequestError(
+      `Studio CMS write failed with status ${response.status}.`,
+      response.status,
+    );
+  }
+
+  return response.json();
+}
+
 function parseContentType(value: unknown): StudioContentTypeOption | null {
+  if (!isRecord(value)) return null;
+  const id = requiredString(value.id);
+  const name = requiredString(value.name);
+  const slug = requiredString(value.slug);
+  return id && name && slug ? { id, name, slug } : null;
+}
+
+function parseSubject(value: unknown): StudioSubjectOption | null {
   if (!isRecord(value)) return null;
   const id = requiredString(value.id);
   const name = requiredString(value.name);
@@ -190,4 +247,61 @@ export async function loadStudioContentList(
     sourceCount,
     isTruncated: sourceCount > sourceItems.length,
   };
+}
+
+export async function loadStudioDraftCreateOptions(): Promise<StudioDraftCreateOptions> {
+  const { url } = getSupabaseConfig();
+  const accessToken = await getStudioAccessToken();
+
+  const contentTypesEndpoint = new URL(`${url}/rest/v1/content_types`);
+  contentTypesEndpoint.searchParams.set("select", "id,name,slug");
+  contentTypesEndpoint.searchParams.set("is_active", "eq.true");
+  contentTypesEndpoint.searchParams.set("order", "sort_order.asc,name.asc");
+
+  const subjectsEndpoint = new URL(`${url}/rest/v1/subjects`);
+  subjectsEndpoint.searchParams.set("select", "id,name,slug");
+  subjectsEndpoint.searchParams.set("is_active", "eq.true");
+  subjectsEndpoint.searchParams.set("order", "name.asc");
+
+  const [contentTypeResult, subjectResult] = await Promise.all([
+    fetchStudioRows(contentTypesEndpoint, accessToken),
+    fetchStudioRows(subjectsEndpoint, accessToken),
+  ]);
+
+  return {
+    contentTypes: contentTypeResult.rows
+      .map(parseContentType)
+      .filter((value): value is StudioContentTypeOption => value !== null),
+    subjects: subjectResult.rows
+      .map(parseSubject)
+      .filter((value): value is StudioSubjectOption => value !== null),
+  };
+}
+
+export async function createStudioDraft(input: StudioDraftCreateInput): Promise<StudioDraftCreateResult> {
+  const { url } = getSupabaseConfig();
+  const accessToken = await getStudioAccessToken();
+  const endpoint = new URL(`${url}/rest/v1/rpc/create_content_draft`);
+
+  const payload = await callStudioRpc(endpoint, accessToken, {
+    p_content_type_id: input.contentTypeId,
+    p_locale: input.locale,
+    p_title: input.title,
+    p_slug: input.slug,
+    p_summary: input.summary,
+    p_body_json: input.bodyJson,
+    p_subject_ids: input.subjectIds,
+  });
+
+  if (!Array.isArray(payload) || !isRecord(payload[0])) {
+    throw new Error("Studio CMS returned an invalid create result.");
+  }
+
+  const contentId = requiredString(payload[0].content_id);
+  const localizationId = requiredString(payload[0].localization_id);
+  if (!contentId || !localizationId) {
+    throw new Error("Studio CMS returned an incomplete create result.");
+  }
+
+  return { contentId, localizationId };
 }

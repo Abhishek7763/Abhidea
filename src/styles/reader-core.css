@@ -1,0 +1,515 @@
+.signature-reader {
+  --reader-measure: 45rem;
+  background: var(--reader-background);
+  color: var(--reader-text);
+}
+
+.reader-header {
+  padding-block: clamp(3rem, 7vw, 6rem) clamp(2.5rem, 5vw, 4.5rem);
+}
+
+.reader-breadcrumb {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+  align-items: center;
+  margin-bottom: 2rem;
+  color: var(--reader-text-secondary);
+  font-size: 0.82rem;
+}
+
+.reader-breadcrumb a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.reader-breadcrumb a:hover {
+  color: var(--reader-text);
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+
+.reader-header-grid {
+  display: grid;
+  gap: 2rem;
+  align-items: end;
+}
+
+.reader-eyebrow,
+.reader-section-label {
+  margin: 0;
+  color: var(--reader-text-secondary);
+  font-family: var(--font-ui), var(--font-devanagari-sans), system-ui, sans-serif;
+  font-size: 0.76rem;
+  font-weight: 750;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.signature-reader[lang="hi"] .reader-eyebrow,
+.signature-reader[lang="hi"] .reader-section-label {
+  letter-spacing: 0.03em;
+  text-transform: none;
+}
+
+.reader-header h1 {
+  max-width: 14ch;
+  margin: 0.75rem 0 0;
+  color: var(--reader-text);
+  font-family: var(--font-ui), var(--font-devanagari-sans), system-ui, sans-serif;
+  font-size: clamp(2.75rem, 7vw, 5.6rem);
+  font-weight: 650;
+  letter-spacing: -0.05em;
+  line-height: 0.99;
+  text-wrap: balance;
+}
+
+.signature-reader[lang="hi"] .reader-header h1 {
+  max-width: 17ch;
+  font-family: var(--font-devanagari-sans), var(--font-ui), system-ui, sans-serif;
+  letter-spacing: -0.015em;
+  line-height: 1.16;
+}
+
+.reader-summary {
+  max-width: 44rem;
+  margin: 1.5rem 0 0;
+  color: var(--reader-text-secondary);
+  font-family: var(--font-reader-latin), Georgia, serif;
+  font-size: clamp(1.15rem, 2vw, 1.38rem);
+  line-height: 1.7;
+}
+
+.signature-reader[lang="hi"] .reader-summary {
+  font-family: var(--font-devanagari-serif), serif;
+  line-height: 1.9;
+}
+
+.reader-meta-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+  align-items: center;
+  margin-top: 1.5rem;
+  color: var(--reader-text-secondary);
+  font-family: var(--font-ui), var(--font-devanagari-sans), system-ui, sans-serif;
+  font-size: 0.82rem;
+}
+
+.reader-topic {
+  border: 1px solid var(--reader-border);
+  border-radius: var(--radius-pill);
+  padding: 0.28rem 0.55rem;
+}
+
+.reader-language-card {
+  display: grid;
+  gap: 0.3rem;
+  width: min(100%, 16rem);
+  border: 1px solid var(--reader-border);
+  border-radius: var(--radius-lg);
+  background: var(--reader-surface);
+  padding: 1rem 1.1rem;
+  font-family: var(--font-ui), var(--font-devanagari-sans), system-ui, sans-serif;
+}
+
+.reader-language-card > span {
+  color: var(--reader-text-secondary);
+  font-size: 0.74rem;
+}
+
+.reader-language-card strong {
+  font-size: 1rem;
+}
+
+.reader-language-card a {
+  width: fit-content;
+  margin-top: 0.35rem;
+  color: var(--reader-link);
+  font-size: 0.84rem;
+  font-weight: 700;
+  text-underline-offset: 0.2em;
+}
+
+.reader-body-shell {
+  display: grid;
+  gap: 2.5rem;
+  align-items: start;
+  padding-bottom: clamp(4rem, 8vw, 7rem);
+}
+
+.reader-main-column {
+  min-width: 0;
+}
+
+.reader-document,
+.reader-sources {
+  width: min(100%, var(--reader-measure));
+  margin-inline: auto;
+}
+
+.reader-document {
+  font-family: var(--font-reader-latin), Georgia, serif;
+  font-size: clamp(1.12rem, 1.6vw, 1.24rem);
+  line-height: 1.82;
+  text-wrap: pretty;
+}
+
+.signature-reader[lang="hi"] .reader-document {
+  font-family: var(--font-devanagari-serif), serif;
+  font-size: clamp(1.14rem, 1.7vw, 1.27rem);
+  line-height: 1.95;
+}
+
+.reader-document > p {
+  margin: 0 0 1.45em;
+}
+
+.reader-document h2,
+.reader-document h3 {
+  scroll-margin-top: 6rem;
+  color: var(--reader-text);
+  font-family: var(--font-ui), var(--font-devanagari-sans), system-ui, sans-serif;
+  font-weight: 680;
+  text-wrap: balance;
+}
+
+.reader-document h2 {
+  margin: 2.7em 0 0.7em;
+  font-size: clamp(1.75rem, 3vw, 2.45rem);
+  letter-spacing: -0.035em;
+  line-height: 1.16;
+}
+
+.reader-document h3 {
+  margin: 2.2em 0 0.65em;
+  font-size: clamp(1.35rem, 2vw, 1.7rem);
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+}
+
+.signature-reader[lang="hi"] .reader-document h2,
+.signature-reader[lang="hi"] .reader-document h3 {
+  font-family: var(--font-devanagari-sans), var(--font-ui), system-ui, sans-serif;
+  letter-spacing: 0;
+  line-height: 1.38;
+}
+
+.reader-document ul,
+.reader-document ol {
+  display: grid;
+  gap: 0.65rem;
+  margin: 0 0 1.6em;
+  padding-inline-start: 1.45em;
+}
+
+.reader-document li::marker {
+  color: var(--accent);
+  font-family: var(--font-ui), system-ui, sans-serif;
+  font-weight: 750;
+}
+
+.reader-quote {
+  margin: 2.2rem 0;
+  border-inline-start: 3px solid var(--accent);
+  padding: 0.35rem 0 0.35rem 1.35rem;
+}
+
+.reader-quote blockquote {
+  margin: 0;
+  color: var(--reader-text);
+  font-size: 1.16em;
+  font-style: italic;
+  line-height: 1.7;
+}
+
+.reader-quote figcaption {
+  margin-top: 0.7rem;
+  color: var(--reader-text-secondary);
+  font-family: var(--font-ui), var(--font-devanagari-sans), system-ui, sans-serif;
+  font-size: 0.78rem;
+}
+
+.reader-callout,
+.reader-block-warning {
+  margin: 2rem 0;
+  border: 1px solid var(--reader-border);
+  border-radius: var(--radius-lg);
+  background: var(--reader-surface);
+  padding: 1.15rem 1.25rem;
+}
+
+.reader-callout[data-tone="key-idea"] {
+  border-color: color-mix(in srgb, var(--accent) 35%, var(--reader-border));
+  background: color-mix(in srgb, var(--accent-soft) 45%, var(--reader-surface));
+}
+
+.reader-callout[data-tone="warning"] {
+  border-color: color-mix(in srgb, var(--warning) 38%, var(--reader-border));
+}
+
+.reader-callout-title {
+  margin: 0 0 0.35rem !important;
+  color: var(--reader-text);
+  font-family: var(--font-ui), var(--font-devanagari-sans), system-ui, sans-serif;
+  font-size: 0.85rem;
+  font-weight: 750;
+}
+
+.reader-callout p:last-child,
+.reader-block-warning p {
+  margin: 0;
+}
+
+.reader-figure {
+  margin: 2.7rem 0;
+}
+
+.reader-figure img {
+  width: 100%;
+  height: auto;
+  border: 1px solid var(--reader-border);
+  border-radius: var(--radius-lg);
+  background: var(--reader-surface);
+}
+
+.reader-figure figcaption {
+  display: grid;
+  gap: 0.2rem;
+  margin-top: 0.75rem;
+  color: var(--reader-text-secondary);
+  font-family: var(--font-ui), var(--font-devanagari-sans), system-ui, sans-serif;
+  font-size: 0.78rem;
+  line-height: 1.55;
+}
+
+.reader-figure-credit {
+  font-size: 0.72rem;
+}
+
+.reader-divider {
+  border: 0;
+  border-top: 1px solid var(--reader-border);
+  margin: 3rem 0;
+}
+
+.reader-closure {
+  margin: 2.5rem 0;
+  border: 1px solid var(--reader-border);
+  border-radius: var(--radius-xl);
+  background: var(--reader-surface);
+  padding: clamp(1.25rem, 4vw, 2rem);
+}
+
+.reader-closure[data-variant="abhidea-take"] {
+  border-color: color-mix(in srgb, var(--accent) 42%, var(--reader-border));
+}
+
+.reader-closure-label {
+  margin: 0 !important;
+  color: var(--accent-strong);
+  font-family: var(--font-ui), var(--font-devanagari-sans), system-ui, sans-serif;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.signature-reader[lang="hi"] .reader-closure-label {
+  letter-spacing: 0.02em;
+  text-transform: none;
+}
+
+.reader-closure h2 {
+  margin: 0.65rem 0 0.65rem;
+  font-size: clamp(1.45rem, 2.5vw, 1.95rem);
+}
+
+.reader-closure > p:last-child {
+  margin: 0;
+}
+
+.reader-toc-wrap {
+  display: none;
+}
+
+.reader-toc {
+  position: sticky;
+  top: 6.5rem;
+  border-left: 1px solid var(--reader-border);
+  padding-left: 1rem;
+  font-family: var(--font-ui), var(--font-devanagari-sans), system-ui, sans-serif;
+}
+
+.reader-toc > p {
+  margin: 0 0 0.8rem;
+  color: var(--reader-text-secondary);
+  font-size: 0.72rem;
+  font-weight: 750;
+  text-transform: uppercase;
+}
+
+.reader-toc ol {
+  display: grid;
+  gap: 0.55rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.reader-toc li[data-level="3"] {
+  padding-left: 0.75rem;
+}
+
+.reader-toc a {
+  color: var(--reader-text-secondary);
+  font-size: 0.8rem;
+  line-height: 1.4;
+  text-decoration: none;
+}
+
+.reader-toc a:hover {
+  color: var(--reader-text);
+}
+
+.reader-sources {
+  margin-top: 4rem;
+  border-top: 1px solid var(--reader-border);
+  padding-top: 2.2rem;
+}
+
+.reader-sources h2,
+.reader-related h2 {
+  margin: 0.55rem 0 0;
+  color: var(--reader-text);
+  font-family: var(--font-ui), var(--font-devanagari-sans), system-ui, sans-serif;
+  font-size: clamp(1.6rem, 3vw, 2.2rem);
+  letter-spacing: -0.025em;
+}
+
+.signature-reader[lang="hi"] .reader-sources h2,
+.signature-reader[lang="hi"] .reader-related h2 {
+  letter-spacing: 0;
+}
+
+.reader-sources ol {
+  display: grid;
+  gap: 1rem;
+  margin: 1.4rem 0 0;
+  padding-inline-start: 1.2rem;
+  font-family: var(--font-ui), var(--font-devanagari-sans), system-ui, sans-serif;
+}
+
+.reader-sources li {
+  padding-inline-start: 0.25rem;
+}
+
+.reader-sources a,
+.reader-sources span {
+  color: var(--reader-text);
+  font-size: 0.9rem;
+  font-weight: 650;
+}
+
+.reader-sources a {
+  text-underline-offset: 0.2em;
+}
+
+.reader-sources small {
+  display: block;
+  margin-top: 0.2rem;
+  color: var(--reader-text-secondary);
+  font-size: 0.76rem;
+}
+
+.reader-related {
+  border-top: 1px solid var(--reader-border);
+  background: var(--surface-subtle);
+  padding-block: clamp(3.5rem, 7vw, 6rem);
+}
+
+.reader-related-grid {
+  display: grid;
+  gap: 0.9rem;
+  margin-top: 1.7rem;
+}
+
+.reader-related-card {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  padding: 1.2rem;
+  color: var(--text-primary);
+  text-decoration: none;
+}
+
+.reader-related-card:hover {
+  border-color: var(--border-strong);
+  background: var(--surface-raised);
+}
+
+.reader-related-card h3 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.reader-related-card p {
+  margin: 0.5rem 0 0;
+  color: var(--text-secondary);
+  font-size: 0.86rem;
+  line-height: 1.6;
+}
+
+@media (min-width: 54rem) {
+  .reader-header-grid {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .reader-language-card {
+    justify-self: end;
+  }
+
+  .reader-related-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 72rem) {
+  .reader-body-shell {
+    grid-template-columns: 13rem minmax(0, 1fr) 13rem;
+  }
+
+  .reader-toc-wrap {
+    display: block;
+    grid-column: 1;
+  }
+
+  .reader-main-column {
+    grid-column: 2;
+  }
+}
+
+@media (max-width: 39rem) {
+  .reader-header h1 {
+    font-size: clamp(2.45rem, 12vw, 3.6rem);
+  }
+
+  .signature-reader[lang="hi"] .reader-header h1 {
+    font-size: clamp(2.2rem, 10.5vw, 3.2rem);
+  }
+
+  .reader-document {
+    font-size: 1.08rem;
+    line-height: 1.78;
+  }
+
+  .signature-reader[lang="hi"] .reader-document {
+    font-size: 1.1rem;
+    line-height: 1.9;
+  }
+
+  .reader-closure,
+  .reader-callout {
+    border-radius: var(--radius-lg);
+  }
+}

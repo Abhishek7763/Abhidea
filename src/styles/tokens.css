@@ -1,4 +1,6 @@
 :root {
+  color-scheme: light dark;
+
   --background: #f7f7f5;
   --surface: #ffffff;
   --surface-raised: #ffffff;
@@ -60,7 +62,12 @@
   --ease-standard: cubic-bezier(0.2, 0, 0, 1);
 }
 
+:root[data-theme="light"] {
+  color-scheme: light;
+}
+
 :root[data-theme="dark"] {
+  color-scheme: dark;
   --background: #0c0d0f;
   --surface: #121417;
   --surface-raised: #191c20;

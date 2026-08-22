@@ -1,8 +1,38 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState, useSyncExternalStore } from "react";
 
 type ThemeMode = "system" | "light" | "dark";
+
+type ThemeListener = () => void;
+
+const themeListeners = new Set<ThemeListener>();
+
+function getStoredTheme(): ThemeMode {
+  const saved = localStorage.getItem("abhidea-theme");
+  return saved === "light" || saved === "dark" ? saved : "system";
+}
+
+function subscribeToTheme(listener: ThemeListener) {
+  themeListeners.add(listener);
+
+  function onStorage(event: StorageEvent) {
+    if (event.key === "abhidea-theme") {
+      listener();
+    }
+  }
+
+  window.addEventListener("storage", onStorage);
+
+  return () => {
+    themeListeners.delete(listener);
+    window.removeEventListener("storage", onStorage);
+  };
+}
+
+function emitThemeChange() {
+  themeListeners.forEach((listener) => listener());
+}
 
 function applyTheme(mode: ThemeMode) {
   const root = document.documentElement;
@@ -11,32 +41,25 @@ function applyTheme(mode: ThemeMode) {
     delete root.dataset.theme;
     root.style.removeProperty("color-scheme");
     localStorage.removeItem("abhidea-theme");
+    emitThemeChange();
     return;
   }
 
   root.dataset.theme = mode;
   root.style.colorScheme = mode;
   localStorage.setItem("abhidea-theme", mode);
+  emitThemeChange();
 }
 
 export function DesignSystemControls() {
-  const [theme, setTheme] = useState<ThemeMode>("system");
+  const theme = useSyncExternalStore(subscribeToTheme, getStoredTheme, () => "system");
   const [comfort, setComfort] = useState(false);
 
-  useEffect(() => {
-    const saved = localStorage.getItem("abhidea-theme");
-    if (saved === "light" || saved === "dark") {
-      setTheme(saved);
-    }
-  }, []);
-
-  function chooseTheme(mode: ThemeMode) {
-    setTheme(mode);
-    applyTheme(mode);
-  }
-
   return (
-    <div className="surface sticky top-4 z-10 flex flex-wrap items-center gap-2 p-3" aria-label="Design system preview controls">
+    <div
+      className="surface sticky top-4 z-10 flex flex-wrap items-center gap-2 p-3"
+      aria-label="Appearance preview controls"
+    >
       <span className="mr-2 text-sm font-semibold">Theme</span>
       {(["system", "light", "dark"] as const).map((mode) => (
         <button
@@ -44,7 +67,7 @@ export function DesignSystemControls() {
           type="button"
           className={theme === mode ? "button button-primary" : "button button-secondary"}
           aria-pressed={theme === mode}
-          onClick={() => chooseTheme(mode)}
+          onClick={() => applyTheme(mode)}
         >
           {mode[0].toUpperCase() + mode.slice(1)}
         </button>

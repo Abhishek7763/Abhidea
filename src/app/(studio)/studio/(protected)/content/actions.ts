@@ -16,6 +16,7 @@ import {
   type StudioDraftUpdateState,
 } from "@/features/studio-editor-model";
 import {
+  createStudioLinkedEdition,
   StudioEditorRequestError,
   updateStudioDraft,
 } from "@/features/studio-editor";
@@ -96,6 +97,78 @@ export async function createStudioDraftAction(
 
   revalidatePath("/studio/content");
   redirect("/studio/content?created=1");
+}
+
+export async function createStudioLinkedEditionAction(
+  _previousState: StudioDraftCreateState,
+  formData: FormData,
+): Promise<StudioDraftCreateState> {
+  const sourceLocalizationId = formText(formData, "sourceLocalizationId");
+  const locale = formText(formData, "locale");
+  const title = formText(formData, "title").trim();
+  const slug = normalizeStudioDraftSlug(formText(formData, "slug"), title);
+  const summary = formText(formData, "summary").trim();
+  const bodyText = formText(formData, "body");
+  const fieldErrors: Record<string, string> = {};
+
+  if (!isStudioUuid(sourceLocalizationId)) {
+    fieldErrors.sourceLocalizationId = "Source edition identity is invalid.";
+  }
+  if (!isStudioContentLocale(locale)) fieldErrors.locale = "Choose English or Hindi.";
+  if (title.length === 0 || title.length > 180) {
+    fieldErrors.title = "Title must be between 1 and 180 characters.";
+  }
+  if (slug.length === 0) {
+    fieldErrors.slug = "Add a slug or use a title that can generate one.";
+  }
+  if (summary.length > 1200) fieldErrors.summary = "Summary must be 1200 characters or fewer.";
+  if (bodyText.length > 120000) fieldErrors.body = "Body is too large for this draft checkpoint.";
+
+  if (Object.keys(fieldErrors).length > 0 || !isStudioContentLocale(locale)) {
+    return {
+      status: "error",
+      message: "Fix the highlighted fields before creating the linked edition.",
+      fieldErrors,
+    };
+  }
+
+  let localizationId: string;
+  try {
+    const result = await createStudioLinkedEdition({
+      sourceLocalizationId,
+      locale,
+      title,
+      slug,
+      summary,
+      bodyJson: buildStudioDraftDocument(bodyText),
+    });
+    localizationId = result.localizationId;
+  } catch (error) {
+    if (error instanceof StudioEditorRequestError && error.code === "23505") {
+      return {
+        status: "error",
+        message: "That language edition already exists. Return to the source draft and open the existing edition.",
+        fieldErrors: {},
+      };
+    }
+
+    if (error instanceof StudioEditorRequestError && (error.status === 401 || error.status === 403)) {
+      return {
+        status: "error",
+        message: "Your Studio session is no longer authorized. Reload and sign in again.",
+        fieldErrors: {},
+      };
+    }
+
+    return {
+      status: "error",
+      message: "Linked edition could not be created. The source edition remains unchanged.",
+      fieldErrors: {},
+    };
+  }
+
+  revalidatePath("/studio/content");
+  redirect(`/studio/content/${localizationId}/edit?linked=1`);
 }
 
 export async function updateStudioDraftAction(

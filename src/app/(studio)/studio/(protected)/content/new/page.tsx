@@ -20,10 +20,10 @@ export default async function StudioNewDraftPage() {
 
       <section className="studio-draft-intro" aria-labelledby="new-draft-heading">
         <div>
-          <p className="studio-kicker">Phase 10C</p>
-          <h2 id="new-draft-heading">Create a private localized draft</h2>
+          <p className="studio-kicker">Private authoring</p>
+          <h2 id="new-draft-heading">Create the first localized edition</h2>
           <p>
-            Save the first working edition without publishing anything. Editing, autosave and review controls remain separate checkpoints.
+            Save one English or Hindi working edition first. After creation, the editor can add the linked counterpart language while keeping localized writing independent.
           </p>
         </div>
         <span>Transactional save</span>

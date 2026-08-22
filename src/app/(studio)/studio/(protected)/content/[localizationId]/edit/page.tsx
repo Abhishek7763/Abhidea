@@ -4,10 +4,11 @@ import { notFound } from "next/navigation";
 import { StudioEditorForm } from "@/app/(studio)/studio/(protected)/content/[localizationId]/edit/editor-form";
 import {
   isStudioUuid,
+  otherStudioContentLocale,
   studioEditorialStatusLabel,
   studioLocaleLabel,
 } from "@/features/studio-content-model";
-import { loadStudioDraftEditor } from "@/features/studio-editor";
+import { loadStudioDraftEditor, loadStudioEditionLinks } from "@/features/studio-editor";
 
 type StudioDraftEditPageProps = Readonly<{
   params: Promise<{ localizationId: string }>;
@@ -35,7 +36,12 @@ export default async function StudioDraftEditPage({ params, searchParams }: Stud
   const draft = await loadStudioDraftEditor(localizationId);
   if (!draft) notFound();
 
-  const saved = firstSearchValue((await searchParams).saved) === "1";
+  const editions = await loadStudioEditionLinks(draft.contentId);
+  const counterpartLocale = otherStudioContentLocale(draft.locale);
+  const counterpart = editions.find((edition) => edition.locale === counterpartLocale);
+  const resolvedSearchParams = await searchParams;
+  const saved = firstSearchValue(resolvedSearchParams.saved) === "1";
+  const linked = firstSearchValue(resolvedSearchParams.linked) === "1";
 
   return (
     <main>
@@ -49,7 +55,12 @@ export default async function StudioDraftEditPage({ params, searchParams }: Stud
         </Link>
       </header>
 
-      {saved ? (
+      {linked ? (
+        <div className="studio-content-notice" role="status">
+          <strong>Linked edition created.</strong>
+          <span>This localized draft shares the same logical content identity while keeping its writing independent.</span>
+        </div>
+      ) : saved ? (
         <div className="studio-content-notice" role="status">
           <strong>Draft saved.</strong>
           <span>Latest private version loaded with conflict protection active.</span>
@@ -64,6 +75,34 @@ export default async function StudioDraftEditPage({ params, searchParams }: Stud
           <span>Lock v{draft.lockVersion}</span>
         </div>
         <time dateTime={draft.updatedAt}>Updated {formatUpdatedAt(draft.updatedAt)}</time>
+      </section>
+
+      <section className="studio-panel studio-draft-section" aria-labelledby="bilingual-editions-heading">
+        <div>
+          <p className="studio-kicker">Bilingual editions</p>
+          <h2 id="bilingual-editions-heading">English and Hindi stay linked, not duplicated</h2>
+          <p>
+            Content Type and Subjects are shared at the logical-content level. Each language keeps its own title, slug, summary, body and editorial state.
+          </p>
+        </div>
+
+        <div className="studio-draft-fields">
+          <div className="studio-content-card-meta" aria-label="Edition availability">
+            <span>{studioLocaleLabel(draft.locale)} — current</span>
+            <span>{studioLocaleLabel(counterpartLocale)} — {counterpart ? "available" : "not created"}</span>
+          </div>
+          <div className="studio-content-filter-actions">
+            {counterpart ? (
+              <Link className="studio-content-secondary-link" href={`/studio/content/${counterpart.localizationId}/edit`}>
+                Open {studioLocaleLabel(counterpartLocale)} edition
+              </Link>
+            ) : (
+              <Link className="studio-content-primary-link" href={`/studio/content/${draft.localizationId}/new-edition`}>
+                Add {studioLocaleLabel(counterpartLocale)} edition
+              </Link>
+            )}
+          </div>
+        </div>
       </section>
 
       {draft.document.ok ? (

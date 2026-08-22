@@ -64,6 +64,10 @@ export function isStudioContentLocale(value: unknown): value is StudioContentLoc
   return value === "en" || value === "hi";
 }
 
+export function otherStudioContentLocale(locale: StudioContentLocale): StudioContentLocale {
+  return locale === "en" ? "hi" : "en";
+}
+
 export function isStudioEditorialStatus(value: unknown): value is StudioEditorialStatus {
   return value === "draft" || value === "needs_review" || value === "ready";
 }

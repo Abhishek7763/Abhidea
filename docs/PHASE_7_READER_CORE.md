@@ -1,7 +1,7 @@
 # ABHIDEA — Phase 7 Signature Reader Core
 
 Date: 22 August 2026
-Status: VISUAL QA PASS — RELEASE VERIFICATION PENDING
+Status: PASS
 
 ## Objective
 
@@ -87,7 +87,7 @@ Not included because it belongs to later backend/CMS phases:
 
 A granular loading indicator is also intentionally deferred until real asynchronous content/data boundaries exist. A broad Public loading boundary is not reintroduced because it previously masked `notFound()` HTTP semantics.
 
-## Gate evidence
+## Final gate evidence
 
 Technical verification:
 - [x] dependency install passes
@@ -96,8 +96,8 @@ Technical verification:
 - [x] strict typecheck passes
 - [x] automated Reader structured-document tests pass
 - [x] production build passes
-- [x] English and Hindi Reader routes are present in the successful Vercel preview build output
-- [x] figure uses responsive `next/image` rendering with useful alt text in the fixture contract
+- [x] release PR #15 from `staging` to `main` passed the full repository gate
+- [x] release merged to `main` as `00576dd04892b628dbd7b0bca928e00b29dd480c`
 
 Owner visual QA on 22 August 2026:
 - [x] English QA Reader visual review
@@ -106,11 +106,16 @@ Owner visual QA on 22 August 2026:
 - [x] responsive Reader presentation approved
 - [x] TOC, figure, Sources, ABHIDEA's Take, Conclusion and Related Knowledge approved
 
-Release verification still required before final PASS:
-- [ ] release PR from `staging` to `main` passes the full repository gate
-- [ ] production English QA Reader returns HTTP 200
-- [ ] production Hindi QA Reader returns HTTP 200
-- [ ] production unknown Reader slug returns real HTTP 404 with noindex behavior
-- [ ] production release is READY on the canonical ABHIDEA Vercel project
+Production verification:
+- [x] Vercel production deployment `dpl_C1HpjzAmkJZdDQWmUBWCbmtkGdsN` reached READY
+- [x] canonical `https://abhidea.vercel.app/` returns HTTP 200
+- [x] English QA Reader returns HTTP 200 with `noindex, nofollow`, canonical and Hindi alternate metadata
+- [x] Hindi QA Reader returns HTTP 200 with `noindex, nofollow`, canonical and English alternate metadata
+- [x] unknown Reader slug returns real HTTP 404 with `noindex`
+- [x] production build was bootstrapped from the exact merged release SHA and contains both EN/HI Reader routes
 
-Phase 7 becomes final PASS only after those production checks succeed.
+## Phase 7 gate
+
+PASS.
+
+Phase 7 is closed. Phase 8 may now add Reader controls, Eye Comfort behavior, reading progress, browser/device speech synthesis and related interaction features without changing the Phase 7 structured-document contract.

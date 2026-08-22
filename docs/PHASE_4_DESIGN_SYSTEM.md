@@ -1,8 +1,7 @@
 # ABHIDEA Phase 4 — Design System Foundation
 
-Status: Implementation candidate
+Status: PASS
 Date: 2026-08-22
-Branch: `work/design-system`
 
 ## Objective
 
@@ -43,30 +42,15 @@ Establish one reusable visual/accessibility foundation before building the full 
 - Text hierarchy remains usable down to the 320px minimum viewport target.
 - Controls use minimum practical touch heights around 44px.
 
-## First stable build gate
+## Verification evidence
 
-Before promotion to production:
+- Repository verification passes format hygiene, lint, strict typecheck, automated tests and production build.
+- The Public/Reader implementation uses the shared semantic tokens and bilingual typography foundation.
+- Owner visual review on 22 August 2026 approved the current English/Hindi Reader presentation and responsive visual baseline.
+- Light/Dark/System remain the application theme controls; Eye Comfort stays reserved for the dedicated Reader-controls phase.
 
-- `npm ci` passes from the committed lockfile
-- ESLint passes
-- strict TypeScript/type generation passes
-- `next build` passes
-- staging PR is mergeable
-- production deployment uses `main`, not a work branch
-- Vercel deployment reaches READY state
-- public deployment URL responds successfully through Vercel verification tooling
+## Phase 4 gate
 
-## Not included yet
+PASS.
 
-The first stable build is intentionally a foundation milestone, not the full ABHIDEA product. It does not yet include:
-
-- production content feed
-- Supabase content schema
-- final Reader controls
-- search
-- taxonomy pages
-- About page
-- Studio authentication/editor
-- PWA
-
-Those continue phase-by-phase after this stable deployment checkpoint.
+The design-system foundation is approved as the reusable baseline for the Public site, Reader and later Studio work. Future feature-specific controls may extend this foundation without reopening the Phase 4 architecture.

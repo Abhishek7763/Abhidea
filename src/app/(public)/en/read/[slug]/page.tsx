@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
+import { getDemoReaderFixture } from "@/features/reader/reader-demo-fixtures";
 import { getReaderFixture } from "@/features/reader/reader-fixtures";
 import { buildReaderFixtureMetadata, ReaderView } from "@/features/reader/reader-view";
 
@@ -8,9 +9,13 @@ type ReaderPageProps = Readonly<{
   params: Promise<{ slug: string }>;
 }>;
 
+function findReaderEntry(slug: string) {
+  return getReaderFixture("en", slug) ?? getDemoReaderFixture("en", slug);
+}
+
 export async function generateMetadata({ params }: ReaderPageProps): Promise<Metadata> {
   const { slug } = await params;
-  const entry = getReaderFixture("en", slug);
+  const entry = findReaderEntry(slug);
 
   if (!entry) {
     return {
@@ -24,7 +29,7 @@ export async function generateMetadata({ params }: ReaderPageProps): Promise<Met
 
 export default async function EnglishReaderPage({ params }: ReaderPageProps) {
   const { slug } = await params;
-  const entry = getReaderFixture("en", slug);
+  const entry = findReaderEntry(slug);
 
   if (!entry) notFound();
 

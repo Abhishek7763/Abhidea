@@ -1,6 +1,6 @@
 # ABHIDEA Phase 10A — Draft Data Model
 
-Status: Implementation checkpoint
+Status: Database verification complete — repository gate pending
 Date: 2026-08-22
 Baseline staging SHA: `e409eb1f3fec6aedf5ffc7e22979f59ae42b47de`
 Supabase project: `zdsanovvmmwfiqjjnxhr`
@@ -179,22 +179,49 @@ Not activated here:
 
 Those remain later checkpoints so this migration stays additive and reviewable.
 
-## Migration
+## Migrations
 
-Repository migration:
+Repository migrations:
 
-`supabase/migrations/20260822201500_phase10a_cms_draft_model.sql`
+- `supabase/migrations/20260822201500_phase10a_cms_draft_model.sql`
+- `supabase/migrations/20260822203000_phase10a_actor_fk_indexes.sql`
+
+Applied Supabase migration history:
+
+- `20260822144024 phase10a_cms_draft_model`
+- `20260822144154 phase10a_actor_fk_indexes`
+
+The second migration is a forward-only performance correction for actor foreign-key indexes reported by the advisor after the first migration.
+
+## Database verification — 2026-08-22
+
+Verified against project `zdsanovvmmwfiqjjnxhr`:
+
+- all six Phase 10A tables exist and have RLS enabled
+- all eight V1 content types are present and active
+- `anon` has no table privileges on the Phase 10A CMS surface
+- authenticated non-Studio RLS simulation sees zero Content Type rows
+- active Studio admin RLS simulation sees all eight Content Type rows
+- rollback-only authoring probe successfully created Subject → Content → EN Localization → Draft → Subject link
+- actor stamping succeeded for Subject, Content, Localization, Draft and Subject link
+- default draft state validated as `draft`, `lock_version = 1`, `schemaVersion = 1`
+- rollback probe left zero Subjects, Contents, Localizations, Drafts and Subject links behind
+- initial unindexed-foreign-key advisor notices were fixed with the follow-up migration
+
+Security advisor currently reports one project-level warning: **Leaked Password Protection Disabled**. It existed before/independently of Phase 10A DDL and does not indicate draft/RLS leakage. Authentication-hardening configuration can be handled separately rather than changing Auth behavior inside this schema migration.
+
+Performance advisor now reports only **unused index** INFO notices. This is expected because the new CMS tables intentionally contain no real content rows yet; required FK/query indexes should not be removed before Phase 10B starts exercising them.
 
 ## Acceptance gate
 
 Phase 10A is accepted only after:
 
-1. migration applies successfully to project `zdsanovvmmwfiqjjnxhr`
-2. required tables exist with RLS enabled
-3. all eight V1 content types are present
-4. anon has no draft/editorial table privileges
-5. current active Studio admin can access the CMS model through RLS
-6. security advisor is clean or findings are understood and fixed
-7. performance advisor is reviewed
-8. repository PR CI passes before merge to `staging`
-9. `main` remains untouched
+1. migration applies successfully to project `zdsanovvmmwfiqjjnxhr` — PASS
+2. required tables exist with RLS enabled — PASS
+3. all eight V1 content types are present — PASS
+4. anon has no draft/editorial table privileges — PASS
+5. current active Studio admin can access the CMS model through RLS — PASS
+6. security advisor is clean or findings are understood and fixed — PASS (one understood project-level Auth warning)
+7. performance advisor is reviewed — PASS (only expected unused-index INFO remains)
+8. repository PR CI passes before merge to `staging` — PENDING
+9. `main` remains untouched — PASS

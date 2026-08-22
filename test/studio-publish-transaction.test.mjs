@@ -12,6 +12,10 @@ const editPageUrl = new URL(
   "../src/app/(studio)/studio/(protected)/content/[localizationId]/edit/page.tsx",
   import.meta.url,
 );
+const publishFormUrl = new URL(
+  "../src/app/(studio)/studio/(protected)/content/[localizationId]/edit/publish-form.tsx",
+  import.meta.url,
+);
 
 test("publish preflight requires a saved Ready draft with body content", () => {
   const blocked = buildStudioPublishPreflight({
@@ -54,10 +58,13 @@ test("publish migration keeps privileged writes private and public RPC invoker-o
 });
 
 test("Studio exposes explicit preflight and no automatic publish", async () => {
-  const page = await readFile(editPageUrl, "utf8");
+  const [page, publishForm] = await Promise.all([
+    readFile(editPageUrl, "utf8"),
+    readFile(publishFormUrl, "utf8"),
+  ]);
 
   assert.match(page, /Publish preflight/);
-  assert.match(page, /Publish saved draft/);
   assert.match(page, /Unsaved editor changes are not included/);
+  assert.match(publishForm, /Publish saved draft/);
   assert.doesNotMatch(page, /autosave.*publish/i);
 });

@@ -59,6 +59,13 @@
   box-shadow: 0 8px 30px rgb(169 156 255 / 0.16);
 }
 
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) .button-primary {
+    color: #141218;
+    box-shadow: 0 8px 30px rgb(169 156 255 / 0.16);
+  }
+}
+
 .button-primary:hover:not(:disabled) {
   background: var(--accent-strong);
 }
@@ -191,6 +198,7 @@
   color: var(--reader-text);
   border: 1px solid var(--reader-border);
   border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-sm);
 }
 
 :where(a, button, input, textarea, select, summary, [tabindex]):focus-visible {

@@ -1,89 +1,61 @@
 # ABHIDEA Phase 3 — Database / Security Blueprint
 
-Status: Design only — NOT applied to Supabase
+Status: Normalized after security review — NOT applied to Supabase
 Date: 2026-08-22
 Branch: `work/database-blueprint`
 Supabase project: `zdsanovvmmwfiqjjnxhr`
 
-## 1. Phase objective
+## Objective
 
-Design the V1 PostgreSQL/Auth/RLS/Storage model before any production DDL is applied.
+Design the V1 PostgreSQL/Auth/RLS/Storage model before production DDL. The connected Supabase project currently has zero ABHIDEA public tables and clean security/performance advisors.
 
-The current connected Supabase project is intentionally clean:
+Earlier Drive snapshots belong to a different Supabase project and are reference material only.
 
-- public application tables: 0
-- Auth users: 0 at Phase 0 audit
-- Storage application buckets: 0 at Phase 0 audit
-- security advisor findings: 0
-- performance advisor findings: 0
+## Non-negotiable security rules
 
-No historical ABHIDEA schema will be restored blindly. Earlier Drive snapshots refer to a different Supabase project and are reference material only.
-
-## 2. Security baseline
-
-ABHIDEA will use these rules from the first migration:
-
-1. Every exposed table gets explicit GRANTs and RLS.
-2. A table is not considered safe merely because RLS exists; Data API grants are a separate access layer.
-3. `service_role` / secret keys never enter browser bundles.
+1. Explicit GRANTs and RLS are separate access layers and are both required.
+2. No service-role/secret key in browser code.
+3. `authenticated` does not mean ABHIDEA Admin.
 4. Authorization never trusts user-editable `user_metadata`.
-5. Owner/Admin authorization is derived from server/database-controlled membership data.
-6. Drafts, revisions, private notes and activity internals are never anonymously readable.
-7. Public reading is backed by a deliberate published snapshot, not by filtering columns out of a mutable draft row.
-8. Security-definer helpers, if required, live in a non-exposed `private` schema, have a fixed search path, accept no caller-controlled identity, and expose the minimum result required by RLS.
-9. Views exposed to browser roles must be `security_invoker` where used.
-10. `UPDATE` policies include the necessary `SELECT` visibility and both `USING` / `WITH CHECK` rules where ownership/authorization must remain true after the update.
-11. Columns used repeatedly by RLS predicates are indexed.
-12. All schema changes are migration-backed and re-checked with Supabase security/performance advisors.
+5. Draft/editor/private rows are never anonymously readable.
+6. Working metadata is also private until publish.
+7. Public Reader/Search/Explore consume a deliberate live snapshot.
+8. Security-definer helpers, if required, stay in non-exposed `private`, have a fixed safe search path and minimal privileges.
+9. Revisions are immutable.
+10. Schema application is migration-backed and followed by advisor/readback tests.
 
-Official design references:
-
+Official references:
 - https://supabase.com/docs/guides/database/postgres/row-level-security
 - https://supabase.com/docs/guides/api/securing-your-api
 - https://supabase.com/docs/guides/database/secure-data
 
-## 3. Schema boundaries
+## Schema boundaries
 
 ### `public`
-
-Application data that may be reached through the Supabase Data API after explicit grants and RLS.
+Application tables that may be reachable through the Data API only after explicit grants and RLS.
 
 ### `private`
+Non-exposed authorization/helper functions. It is not a public Data API schema.
 
-Non-exposed helper functions and internal authorization helpers. No direct browser Data API surface.
+### Supabase-managed
+`auth` and `storage` remain provider-managed.
 
-### Supabase-managed schemas
+## Publication architecture
 
-`auth` and `storage` remain Supabase-managed. ABHIDEA references them where required but does not redesign them.
-
-## 4. Draft/live separation decision
-
-A mutable editor row and a public live article must not be the same readable row.
-
-V1 therefore separates:
-
-- stable content identity
-- stable localization identity
-- mutable draft
-- immutable editorial revisions
-- current published snapshot
-
-Flow:
+ABHIDEA separates stable identity, mutable work, immutable history and live output:
 
 `contents`
 → `content_localizations`
-→ `content_drafts` (mutable)
+→ `content_drafts`
 → publish transaction
-→ `content_revisions` (immutable snapshot)
-→ `published_localizations` (current public snapshot)
+→ `content_revisions`
+→ `published_localizations`
 
-This is intentional duplication at the publication boundary. It prevents RLS from accidentally exposing draft-only columns and allows a live article to remain unchanged while a new revision is edited.
+Working concept metadata and working relationships remain Admin-only. A published row snapshots everything Public needs so editing a live article cannot change Public before republish.
 
-## 5. Canonical document contract
+## Canonical document format
 
-Article body data uses the ABHIDEA structured document format, not uncontrolled raw HTML.
-
-Stored documents contain at minimum:
+Body JSON belongs to ABHIDEA, not an editor library:
 
 ```json
 {
@@ -92,37 +64,27 @@ Stored documents contain at minimum:
 }
 ```
 
-Application validation must reject or safely isolate malformed/unknown executable content. Unknown presentation blocks must not crash the full Reader and must never execute arbitrary script/HTML.
+Unknown/malformed blocks fail safely and never execute uncontrolled HTML/script.
 
-## 6. Core tables
+# Core model
 
-### 6.1 `admin_members`
-
-Purpose: server-controlled ABHIDEA Studio authorization.
-
-Key columns:
+## `admin_members`
 
 - `user_id uuid primary key references auth.users(id)`
 - `display_name text`
 - `role text check (role in ('owner','admin'))`
 - `is_active boolean default true`
 - `invited_by uuid null references auth.users(id)`
-- `created_at timestamptz`
-- `updated_at timestamptz`
+- timestamps
 
 Rules:
+- maximum one active Owner via partial unique index
+- ordinary membership CRUD can manage Admin rows only
+- no Admin self-promotion
+- Owner transfer is a separate future audited/step-up operation
+- owner bootstrap waits for a real Auth user
 
-- V1 supports Owner and Admin only.
-- maximum one active Owner enforced with a partial unique index
-- no self-promotion from Admin to Owner
-- owner bootstrap is an explicit controlled operation after an Auth user exists
-- role authorization does not come from `raw_user_meta_data`
-
-### 6.2 `content_types`
-
-Purpose: database-driven Content folders/types.
-
-Key columns:
+## `content_types`
 
 - `id uuid primary key`
 - `name text unique`
@@ -134,59 +96,37 @@ Key columns:
 - `sort_order integer default 0`
 - timestamps
 
-Initial seed rows:
+Initial rows: Article, Book Summary, Fact, Thought, Idea, Life Lesson, Guide, Video Insight.
 
-- Article
-- Book Summary
-- Fact
-- Thought
-- Idea
-- Life Lesson
-- Guide
-- Video Insight
+Controlled vocabulary is public-safe metadata; deactivation hides it from creation/Explore but does not make historical references secret.
 
-Types can be deactivated/reordered without code changes. Hard deletion is blocked while content references the type.
+## `contents`
 
-### 6.3 `contents`
-
-Purpose: language-neutral conceptual content identity.
-
-Key columns:
+Language-neutral working identity, Admin-only:
 
 - `id uuid primary key default gen_random_uuid()`
 - `content_type_id uuid references content_types(id)`
 - `creator_id uuid references auth.users(id)`
 - `lifecycle_status text check (lifecycle_status in ('active','trashed'))`
-- `created_at`
-- `updated_at`
 - `trashed_at timestamptz null`
 - `trashed_by uuid null references auth.users(id)`
+- timestamps
 
-The row exists before meaningful writing begins, giving every draft a stable identity.
+Created immediately when New Content starts.
 
-### 6.4 `content_localizations`
+## `content_localizations`
 
-Purpose: stable English/Hindi identity for one content item.
-
-Key columns:
+Stable English/Hindi working identity, Admin-only:
 
 - `id uuid primary key`
 - `content_id uuid references contents(id) on delete cascade`
 - `locale text check (locale in ('en','hi'))`
-- `created_at`
-- `updated_at`
-
-Constraint:
-
+- timestamps
 - unique `(content_id, locale)`
 
-This table does not contain the public article body.
+## `content_drafts`
 
-### 6.5 `content_drafts`
-
-Purpose: mutable autosaved editor state.
-
-Key columns:
+Mutable autosaved working state, Admin-only:
 
 - `localization_id uuid primary key references content_localizations(id) on delete cascade`
 - `title text`
@@ -202,19 +142,15 @@ Key columns:
 - `autosaved_at timestamptz`
 - `updated_at timestamptz`
 
-Constraints/behavior:
-
-- unique draft slug per locale where slug is non-empty
-- `body_json` must be an object and carry a supported `schemaVersion`
+Rules:
 - autosave increments `lock_version`
-- update calls use expected `lock_version` for optimistic concurrency
+- expected version is checked to prevent silent overwrite
 - autosave does not create permanent revisions
+- draft slug may temporarily conflict; preflight warns and publish enforces the real live uniqueness constraint
 
-### 6.6 `content_revisions`
+## `content_revisions`
 
-Purpose: immutable editorial snapshots.
-
-Key columns:
+Immutable Admin-only editorial snapshots:
 
 - `id uuid primary key`
 - `localization_id uuid references content_localizations(id)`
@@ -223,28 +159,20 @@ Key columns:
 - `created_by uuid references auth.users(id)`
 - `created_at timestamptz`
 - `reason text null`
-
-Constraint:
-
 - unique `(localization_id, revision_number)`
 
-Policy direction:
+No ordinary browser-role UPDATE/DELETE.
 
-- Admins can read revision history
-- publication workflow can insert revisions
-- ordinary clients cannot update/delete revision rows
+Snapshot includes the full publishable localization state plus resolved working metadata used at that revision.
 
-Snapshot contains all publishable localization fields required to reconstruct that revision.
+## `published_localizations`
 
-### 6.7 `published_localizations`
-
-Purpose: current public live snapshot.
-
-Key columns:
+Current live-safe Reader/Search/Explore snapshot:
 
 - `localization_id uuid primary key references content_localizations(id)`
 - `content_id uuid references contents(id)`
 - `revision_id uuid unique references content_revisions(id)`
+- `content_type_id uuid references content_types(id)`
 - `locale text check (locale in ('en','hi'))`
 - `slug text`
 - `title text`
@@ -252,41 +180,39 @@ Key columns:
 - `body_json jsonb`
 - `seo_title text null`
 - `seo_description text null`
+- `subjects_json jsonb default '[]'`
+- `topics_json jsonb default '[]'`
+- `tags_json jsonb default '[]'`
 - `sources_json jsonb default '[]'`
 - `publication_state text check (publication_state in ('published','archived'))`
 - `published_at timestamptz`
 - `updated_at timestamptz`
-
-Constraints:
-
 - unique `(locale, slug)`
-- public policy only permits `publication_state = 'published'`
 
-The Reader and public search build from this live-safe layer, not from `content_drafts`.
+Public policy permits only `publication_state='published'`.
 
-Publish/republish updates this row atomically after a revision snapshot is created.
+The taxonomy/source JSON contains only public-safe resolved descriptors needed to preserve the exact live edition. Search-specific derived indexes/columns are introduced in Phase 13, not prematurely.
 
-## 7. Taxonomy
+# Working taxonomy
 
-Content Type and Subject remain separate dimensions.
+## `subjects`, `topics`, `tags`
 
-### `subjects`
-### `topics`
-### `tags`
-
-Each uses a compact controlled-vocabulary shape:
+Each controlled vocabulary table has:
 
 - `id uuid primary key`
 - `name text`
 - `slug text unique`
 - `aliases text[] default '{}'`
 - `is_active boolean default true`
-- `sort_order integer default 0` where useful
-- timestamps
+- ordering/timestamps where useful
 
-Aliases can contain English, Hindi and Roman-Hindi/Hinglish search variants.
+Aliases may contain English, Hindi and Roman-Hindi/Hinglish variants.
 
-Relationship tables:
+These dictionaries are public-safe to read. `is_active` controls creation/Explore behavior, not secrecy.
+
+## Working relationships
+
+Admin-only:
 
 - `content_subjects(content_id, subject_id)`
 - `content_topics(content_id, topic_id)`
@@ -294,15 +220,13 @@ Relationship tables:
 
 Composite primary keys prevent duplicates.
 
-Public relationship reads are allowed only when the linked content has at least one currently published localization.
+At publish time, resolved public-safe values are copied into the live snapshot JSON. Working relationship changes never become public merely because another edition is already live.
 
-Collections/Series are not created in the first migration unless Phase 1 scope is explicitly reopened for them.
+# Sources
 
-## 8. Sources
+## `sources`
 
-### `sources`
-
-Reusable public-safe source metadata:
+Admin-only reusable source library:
 
 - `id uuid primary key`
 - `title text`
@@ -311,15 +235,12 @@ Reusable public-safe source metadata:
 - `source_type text null`
 - `published_on date null`
 - `accessed_on date null`
-- `link_status text check (...)`
-- `is_public boolean default false`
+- `link_status text`
 - timestamps
 
-Do not store private admin notes in this table.
+## `content_sources`
 
-### `content_sources`
-
-Draft/editor relationship:
+Admin-only working relation:
 
 - `localization_id`
 - `source_id`
@@ -327,13 +248,13 @@ Draft/editor relationship:
 - `note text null`
 - `sort_order integer`
 
-This relationship is Admin-only while editing. Publish copies the safe ordered source representation into the live snapshot and marks referenced source records public as appropriate.
+Publish resolves the safe citation representation into `published_localizations.sources_json`. No public Source table/page is required in V1.
 
-## 9. Media
+# Media
 
-### `media_assets`
+## `media_assets`
 
-Provider-neutral registry:
+Provider-neutral Admin registry:
 
 - `id uuid primary key`
 - `provider text`
@@ -348,15 +269,16 @@ Provider-neutral registry:
 - `credit text null`
 - `source_url text null`
 - `media_kind text`
-- `is_public boolean default false`
 - `created_by uuid references auth.users(id)`
 - timestamps
 
-Content stores `mediaId`, never a permanent provider URL as its canonical media reference.
+Content uses `mediaId`, not permanent provider URLs.
 
-### `media_usages`
+Anonymous media metadata resolution is allowed only when `public_storage_key is not null`.
 
-Tracks where an asset is used:
+## `media_usages`
+
+Admin-only where-used registry:
 
 - `media_id`
 - `content_id`
@@ -364,22 +286,16 @@ Tracks where an asset is used:
 - `usage_kind`
 - timestamps
 
-This supports where-used checks and safe deletion.
+## Storage
 
-### Storage boundary
+- `media-private`: private staged Admin uploads
+- `media-public`: public published/approved optimized variants only
 
-Planned V1 buckets:
+Never upload a never-published draft directly to the public bucket.
 
-- `media-private` — private Admin upload/staging area
-- `media-public` — optimized assets approved for published delivery
+# Private learning notes
 
-Publishing can promote/copy the production variant. Original high-resolution archival files may remain in Drive rather than production Storage.
-
-Storage object paths are not used as content identity.
-
-## 10. Private learning notes
-
-### `private_learning_notes`
+## `private_learning_notes`
 
 - `id uuid primary key`
 - `content_id uuid references contents(id)`
@@ -388,221 +304,143 @@ Storage object paths are not used as content identity.
 - `updated_by uuid references auth.users(id)`
 - timestamps
 
-Never granted to `anon`, never included in public search/sitemap/public snapshots.
+Admin-only; never public Search/sitemap/Reader.
 
-## 11. Website control
+# Website control
 
-### `site_settings`
+## `site_settings`
+Public-safe singleton brand/SEO/footer/navigation defaults. No secrets.
 
-Singleton public-safe website settings:
+## `about_profile`
+Public creator identity, education/background/mission/philosophy and two optional media references.
 
-- brand name
-- tagline
-- default SEO metadata
-- footer text/config
-- selected navigation config
-- timestamps
+## `social_links`
+Flexible records with `label`, `url`, optional `icon_key`, order and `is_visible`. Public only when visible.
 
-No secrets are stored here.
+## `homepage_modules`
+Controlled known module types with JSON config/order/enable state. Not arbitrary HTML/page-builder code.
 
-### `about_profile`
+# Redirects
 
-Singleton creator profile:
+## `redirects`
 
-- public name
-- Creator of ABHIDEA label
-- education
-- profession/background
-- why ABHIDEA exists
-- learning philosophy
-- introduction/description
-- two optional `media_assets` references
-- timestamps
-
-### `social_links`
-
-Flexible records:
-
-- `id`
-- `label`
-- `url`
-- `icon_key null`
-- `sort_order`
-- `is_visible`
-- timestamps
-
-Anonymous users can only select visible rows, so blank/hidden URLs are not exposed.
-
-### `homepage_modules`
-
-Controlled module configuration, not a generic page builder:
-
-- `id`
-- `module_type`
-- `config jsonb`
-- `sort_order`
-- `is_enabled`
-- timestamps
-
-Only application-supported module types are accepted. No arbitrary HTML/script configuration.
-
-## 12. Redirects
-
-### `redirects`
-
-- `id uuid primary key`
+- UUID id
 - `old_path text unique`
 - `new_path text`
-- `status_code integer check (status_code in (301,308))`
-- `is_active boolean`
-- `created_by uuid`
-- timestamps
+- `status_code` 301/308
+- `is_active`
+- actor/timestamps
 
-Application validation prevents self-redirects and redirect loops.
+Application validation prevents self-redirects and loops.
 
-## 13. Activity log
+# Activity
 
-### `activity_log`
+## `activity_log`
 
-Append-only operational history:
+Append-only:
 
-- `id bigint generated always as identity primary key`
-- `actor_id uuid null references auth.users(id)`
-- `action text`
-- `entity_type text`
-- `entity_id uuid null`
-- `metadata jsonb default '{}'`
-- `created_at timestamptz`
+- bigint identity PK
+- `actor_id`
+- `action`
+- `entity_type`
+- `entity_id`
+- `metadata jsonb`
+- `created_at`
 
-Admins can read according to policy. Ordinary authenticated clients do not receive direct UPDATE/DELETE privileges. Writes come from trusted publication/admin workflows or controlled triggers.
+Admin-readable; ordinary clients do not directly UPDATE/DELETE or forge events.
 
-## 14. Authorization helper
+# Authorization helper
 
-Planned helper:
+`private.current_admin_role()`:
 
-`private.current_admin_role()`
+- derives caller only from `auth.uid()`
+- returns active `owner`, `admin` or null
+- takes no caller-selected user id
+- narrowly scoped `SECURITY DEFINER` to avoid RLS recursion
+- fixed safe search path / fully-qualified objects
+- function privileges explicitly revoked/granted
 
-Behavior:
-
-- derives current caller from `auth.uid()`
-- looks up an active `admin_members` row
-- returns only `owner`, `admin` or null
-- no caller-supplied user id
-- `SECURITY DEFINER` only because it must safely inspect the authorization table without RLS recursion
-- fixed/empty search path with fully-qualified object references
-- lives in non-exposed `private` schema
-- EXECUTE granted only as required to `authenticated`
-
-Typical policy predicate:
+RLS predicates:
 
 ```sql
 (select private.current_admin_role()) in ('owner','admin')
 ```
 
-Owner-only predicate:
+Owner-only:
 
 ```sql
 (select private.current_admin_role()) = 'owner'
 ```
 
-## 15. Public read model
+# Public Data API surface
 
-Public ABHIDEA can read only intentionally public data:
+Public may read only:
 
-- active Content Types
-- live `published_localizations`
-- content identities that have live editions
-- active taxonomy values and published relationships
-- public media metadata
-- public source metadata
-- public site settings
+- `published_localizations` where published
+- public-safe Content Type dictionary
+- public-safe Subject/Topic/Tag dictionaries
+- `media_assets` rows with approved public storage keys
+- site settings
 - About profile
 - visible social links
 - enabled homepage modules
-- active redirects when routing needs them
+- active redirects when required
 
-Public ABHIDEA cannot read:
+Public cannot read:
 
-- drafts
-- editor state
+- `contents`
+- `content_localizations`
+- drafts/editor state
 - revision history
-- Trash-only content
-- private learning notes
-- Admin membership
-- activity details
-- unpublished source relationships
-- private media metadata/storage objects
+- working taxonomy/source relationships
+- source library
+- Trash/private learning notes
+- Admin membership/activity internals
+- private media keys/usages
 
-## 16. Publication transaction contract
+# Publish transaction contract
 
-A publish operation must behave as one editorial transaction:
+1. verify active Admin
+2. validate expected `lock_version`
+3. run hard preflight blockers
+4. resolve Content Type/taxonomy/sources into public-safe snapshot values
+5. create immutable revision
+6. upsert live `published_localizations`
+7. promote/resolve public media variants
+8. create redirect if live slug changed
+9. append activity
+10. commit DB transaction
+11. after DB commit, invalidate cache and verify public delivery separately
 
-1. verify authenticated active Admin role
-2. validate expected draft `lock_version`
-3. run publish preflight blockers
-4. create immutable `content_revisions` snapshot
-5. update/insert `published_localizations`
-6. synchronize public-safe sources/media flags/representation
-7. create redirect if a previously live slug changed
-8. append activity entry
-9. commit database transaction
-10. only after DB commit, trigger application cache invalidation/public verification
+# Trash contract
 
-External cache verification is not part of the database transaction and must be reported separately by Studio.
+Trash is a controlled transaction, not a bare row edit:
 
-## 17. Delete / Trash contract
+1. mark concept trashed
+2. archive all live `published_localizations` for that content
+3. append activity
+4. invalidate public cache
 
-Moving content to Trash updates lifecycle metadata; it does not physically delete the editorial history immediately.
+Permanent delete is a separate Owner-restricted dependency-checked operation.
 
-Permanent deletion is a separate Owner-restricted operation and must check dependencies such as:
+# Initial index direction
 
-- current live localizations
-- revisions
-- media usages
-- relationships
-- redirects
+- authorization PK/indexes and unique active Owner
+- content FKs
+- unique `(content_id, locale)`
+- revisions `(localization_id, revision_number desc)`
+- unique published `(locale, slug)`
+- `published_localizations(content_id, publication_state)`
+- taxonomy/source/media relationship FK indexes
+- redirects old path unique
+- activity newest-first index
 
-## 18. Index plan — initial
+Search GIN/tsvector indexes belong to Phase 13 after real query design.
 
-Indexes should follow actual access/RLS paths rather than blanket indexing.
+# Deferred objects
 
-Initial required indexes include:
+No V1 tables for public profiles/accounts, followers/likes/comments, synced bookmarks/highlights, vectors/RAG, quizzes/LMS, Learning Paths, newsletters, fake trending or enterprise approval chains.
 
-- `admin_members(user_id)` via PK
-- unique active Owner partial index
-- `contents(content_type_id)`
-- `contents(creator_id)`
-- `contents(lifecycle_status)` where useful
-- `content_localizations(content_id, locale)` unique
-- `content_drafts(locale/slug equivalent via localization join strategy)` implemented through appropriate stored columns/constraint design during SQL drafting
-- `content_revisions(localization_id, revision_number desc)`
-- `published_localizations(locale, slug)` unique
-- `published_localizations(content_id)`
-- taxonomy relationship foreign-key indexes
-- `media_usages(media_id)` and `media_usages(content_id)`
-- `content_sources(localization_id)`
-- `activity_log(created_at desc)`
-- `redirects(old_path)` unique
+# Phase boundary
 
-Search-specific GIN/tsvector indexes are Phase 13 work and are not forced into the first schema merely for future speculation.
-
-## 19. Explicitly deferred database objects
-
-Do not create V1 tables now for:
-
-- public user profiles/accounts
-- followers/likes/comments
-- public bookmarks/highlights
-- semantic/vector embeddings
-- RAG conversations
-- quizzes/courses/LMS
-- advanced Learning Paths
-- newsletter infrastructure
-- fake trending/popularity
-- enterprise approval chains
-
-## 20. Phase 3 implementation boundary
-
-This document is a blueprint only.
-
-No DDL, RLS policy, bucket, Auth user, seed row or Storage object is applied to the connected Supabase project until the Phase 3 RLS matrix and migration sequence are reviewed together and the security gate passes.
+This is a normalized blueprint only. No DDL/RLS/bucket/Auth mutation has been applied to the connected Supabase project by Phase 3 design work yet.

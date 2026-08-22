@@ -1,0 +1,288 @@
+.studio-content-secondary-link {
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface-raised);
+  padding: 0.65rem 0.85rem;
+  color: var(--text-primary);
+  font-size: 0.76rem;
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.studio-draft-intro {
+  display: grid;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 1rem;
+}
+
+.studio-draft-intro h2,
+.studio-draft-section h2 {
+  margin: 0.35rem 0 0;
+  font-size: clamp(1.2rem, 4vw, 1.65rem);
+  letter-spacing: -0.025em;
+}
+
+.studio-draft-intro p,
+.studio-draft-section > div:first-child p {
+  margin: 0.55rem 0 0;
+  color: var(--text-secondary);
+  font-size: 0.82rem;
+  line-height: 1.6;
+}
+
+.studio-draft-intro > span {
+  width: fit-content;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  background: var(--surface-subtle);
+  padding: 0.4rem 0.65rem;
+  color: var(--text-secondary);
+  font-size: 0.7rem;
+  font-weight: 750;
+}
+
+.studio-draft-form {
+  display: grid;
+  gap: 1rem;
+}
+
+.studio-draft-form-error {
+  border: 1px solid color-mix(in srgb, var(--danger) 38%, var(--border));
+  border-radius: var(--radius-lg);
+  background: color-mix(in srgb, var(--danger) 9%, var(--surface));
+  padding: 0.85rem 0.95rem;
+  font-size: 0.8rem;
+  line-height: 1.55;
+}
+
+.studio-draft-section {
+  display: grid;
+  gap: 1.15rem;
+}
+
+.studio-draft-fields {
+  display: grid;
+  gap: 0.85rem;
+}
+
+.studio-draft-fields label {
+  display: grid;
+  gap: 0.42rem;
+}
+
+.studio-draft-fields label > span {
+  color: var(--text-secondary);
+  font-size: 0.74rem;
+  font-weight: 800;
+}
+
+.studio-draft-fields input,
+.studio-draft-fields select,
+.studio-draft-fields textarea {
+  width: 100%;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface-raised);
+  color: var(--text-primary);
+  outline: none;
+}
+
+.studio-draft-fields input,
+.studio-draft-fields select {
+  min-height: 48px;
+  padding: 0.7rem 0.8rem;
+}
+
+.studio-draft-fields textarea {
+  resize: vertical;
+  padding: 0.8rem;
+  line-height: 1.6;
+}
+
+.studio-draft-fields input:focus-visible,
+.studio-draft-fields select:focus-visible,
+.studio-draft-fields textarea:focus-visible,
+.studio-draft-subjects input:focus-visible + span,
+.studio-content-secondary-link:focus-visible,
+.studio-draft-save-actions a:focus-visible,
+.studio-draft-save-actions button:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--accent) 24%, transparent);
+  outline-offset: 2px;
+}
+
+.studio-draft-fields small {
+  color: var(--text-secondary);
+  font-size: 0.68rem;
+  line-height: 1.5;
+}
+
+.studio-draft-body {
+  min-height: 19rem;
+}
+
+.studio-draft-field-error {
+  color: var(--danger);
+  font-size: 0.68rem;
+  font-weight: 750;
+  line-height: 1.45;
+}
+
+.studio-draft-inline-empty {
+  border: 1px dashed var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--surface-subtle);
+  padding: 0.9rem;
+  color: var(--text-secondary);
+  font-size: 0.76rem;
+  line-height: 1.55;
+}
+
+.studio-draft-subjects {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+  margin: 0;
+  border: 0;
+  padding: 0;
+}
+
+.studio-draft-subjects label {
+  position: relative;
+  cursor: pointer;
+}
+
+.studio-draft-subjects input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.studio-draft-subjects span {
+  display: inline-flex;
+  min-height: 40px;
+  align-items: center;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  background: var(--surface-subtle);
+  padding: 0.55rem 0.75rem;
+  color: var(--text-secondary);
+  font-size: 0.72rem;
+  font-weight: 750;
+}
+
+.studio-draft-subjects input:checked + span {
+  border-color: color-mix(in srgb, var(--accent) 52%, var(--border));
+  background: color-mix(in srgb, var(--accent) 13%, var(--surface));
+  color: var(--text-primary);
+}
+
+.studio-draft-savebar {
+  position: sticky;
+  bottom: calc(5.7rem + env(safe-area-inset-bottom));
+  z-index: 40;
+  display: grid;
+  gap: 0.85rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  background: color-mix(in srgb, var(--surface) 95%, transparent);
+  box-shadow: 0 18px 50px color-mix(in srgb, #000 18%, transparent);
+  padding: 0.9rem;
+  backdrop-filter: blur(18px);
+}
+
+.studio-draft-savebar strong,
+.studio-draft-savebar span {
+  display: block;
+}
+
+.studio-draft-savebar strong {
+  font-size: 0.78rem;
+}
+
+.studio-draft-savebar span {
+  margin-top: 0.18rem;
+  color: var(--text-secondary);
+  font-size: 0.67rem;
+  line-height: 1.45;
+}
+
+.studio-draft-save-actions {
+  display: grid;
+  grid-template-columns: minmax(0, 0.75fr) minmax(0, 1.25fr);
+  gap: 0.55rem;
+}
+
+.studio-draft-save-actions a,
+.studio-draft-save-actions button {
+  display: inline-flex;
+  min-height: 46px;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-md);
+  padding: 0.65rem 0.8rem;
+  font-size: 0.78rem;
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.studio-draft-save-actions a {
+  border: 1px solid var(--border);
+  background: var(--surface-raised);
+  color: var(--text-primary);
+}
+
+.studio-draft-save-actions button {
+  border: 0;
+  background: var(--accent);
+  color: var(--accent-foreground, #fff);
+  cursor: pointer;
+}
+
+.studio-draft-save-actions button:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+
+@media (min-width: 42rem) {
+  .studio-draft-intro {
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: end;
+  }
+
+  .studio-draft-fields-two {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .studio-draft-savebar {
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+  }
+
+  .studio-draft-save-actions {
+    grid-template-columns: auto auto;
+  }
+
+  .studio-draft-save-actions a,
+  .studio-draft-save-actions button {
+    min-width: 7.5rem;
+  }
+}
+
+@media (min-width: 72rem) {
+  .studio-draft-section {
+    grid-template-columns: minmax(14rem, 0.58fr) minmax(28rem, 1.42fr);
+    align-items: start;
+  }
+
+  .studio-draft-savebar {
+    bottom: 1rem;
+  }
+}

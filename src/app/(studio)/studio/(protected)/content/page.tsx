@@ -63,7 +63,7 @@ export default async function StudioContentPage({ searchParams }: StudioContentP
             </Link>
           </div>
           <p>
-            Create and filter private CMS drafts through your Studio session and database RLS. Editing opens in the next controlled checkpoint.
+            Create, filter and explicitly edit private structured drafts through your Studio session and database RLS.
           </p>
         </div>
 
@@ -155,6 +155,9 @@ export default async function StudioContentPage({ searchParams }: StudioContentP
                 <div className="studio-content-card-foot">
                   <span>{item.slug ? `/${item.slug}` : "Slug not set"}</span>
                   <time dateTime={item.updatedAt}>Updated {formatUpdatedAt(item.updatedAt)}</time>
+                  <Link className="studio-content-edit-link" href={`/studio/content/${item.localizationId}/edit`}>
+                    Edit draft
+                  </Link>
                 </div>
               </article>
             ))}

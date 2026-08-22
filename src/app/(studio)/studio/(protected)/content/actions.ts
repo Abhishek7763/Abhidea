@@ -11,6 +11,14 @@ import {
   type StudioDraftCreateState,
 } from "@/features/studio-content-model";
 import { createStudioDraft, StudioContentRequestError } from "@/features/studio-content";
+import {
+  parseStudioEditorDocumentJson,
+  type StudioDraftUpdateState,
+} from "@/features/studio-editor-model";
+import {
+  StudioEditorRequestError,
+  updateStudioDraft,
+} from "@/features/studio-editor";
 
 function formText(formData: FormData, name: string): string {
   const value = formData.get(name);
@@ -88,4 +96,75 @@ export async function createStudioDraftAction(
 
   revalidatePath("/studio/content");
   redirect("/studio/content?created=1");
+}
+
+export async function updateStudioDraftAction(
+  _previousState: StudioDraftUpdateState,
+  formData: FormData,
+): Promise<StudioDraftUpdateState> {
+  const localizationId = formText(formData, "localizationId");
+  const expectedLockVersion = Number(formText(formData, "expectedLockVersion"));
+  const title = formText(formData, "title").trim();
+  const slug = normalizeStudioDraftSlug(formText(formData, "slug"), title);
+  const summary = formText(formData, "summary").trim();
+  const documentJson = formText(formData, "documentJson");
+  const fieldErrors: Record<string, string> = {};
+
+  if (!isStudioUuid(localizationId)) fieldErrors.localizationId = "Draft identity is invalid.";
+  if (!Number.isSafeInteger(expectedLockVersion) || expectedLockVersion < 1) {
+    fieldErrors.expectedLockVersion = "Draft version is invalid. Reload before saving.";
+  }
+  if (title.length === 0 || title.length > 180) {
+    fieldErrors.title = "Title must be between 1 and 180 characters.";
+  }
+  if (slug.length === 0) fieldErrors.slug = "Slug cannot be empty.";
+  if (summary.length > 1200) fieldErrors.summary = "Summary must be 1200 characters or fewer.";
+
+  const parsedDocument = parseStudioEditorDocumentJson(documentJson);
+  if (!parsedDocument.ok) fieldErrors.documentJson = parsedDocument.message;
+
+  if (Object.keys(fieldErrors).length > 0 || !parsedDocument.ok) {
+    return {
+      status: "error",
+      message: "Fix the highlighted draft fields before saving.",
+      fieldErrors,
+    };
+  }
+
+  try {
+    await updateStudioDraft({
+      localizationId,
+      expectedLockVersion,
+      title,
+      slug,
+      summary,
+      bodyJson: parsedDocument.document,
+    });
+  } catch (error) {
+    if (error instanceof StudioEditorRequestError && error.code === "40001") {
+      return {
+        status: "conflict",
+        message: "This draft changed after you opened it. Reload the page before saving so newer work is not overwritten.",
+        fieldErrors: {},
+      };
+    }
+
+    if (error instanceof StudioEditorRequestError && (error.status === 401 || error.status === 403)) {
+      return {
+        status: "error",
+        message: "Your Studio session is no longer authorized. Reload and sign in again.",
+        fieldErrors: {},
+      };
+    }
+
+    return {
+      status: "error",
+      message: "Draft could not be saved. The stored version remains unchanged; reload and try again.",
+      fieldErrors: {},
+    };
+  }
+
+  revalidatePath("/studio/content");
+  revalidatePath(`/studio/content/${localizationId}/edit`);
+  redirect(`/studio/content/${localizationId}/edit?saved=1`);
 }

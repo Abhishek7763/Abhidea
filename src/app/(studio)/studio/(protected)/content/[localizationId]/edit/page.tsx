@@ -1,0 +1,91 @@
+import Link from "next/link";
+import { notFound } from "next/navigation";
+
+import { StudioEditorForm } from "@/app/(studio)/studio/(protected)/content/[localizationId]/edit/editor-form";
+import {
+  isStudioUuid,
+  studioEditorialStatusLabel,
+  studioLocaleLabel,
+} from "@/features/studio-content-model";
+import { loadStudioDraftEditor } from "@/features/studio-editor";
+
+type StudioDraftEditPageProps = Readonly<{
+  params: Promise<{ localizationId: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}>;
+
+function firstSearchValue(value: string | string[] | undefined): string | undefined {
+  return Array.isArray(value) ? value[0] : value;
+}
+
+function formatUpdatedAt(value: string): string {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "Update time unavailable";
+
+  return new Intl.DateTimeFormat("en-IN", {
+    dateStyle: "medium",
+    timeStyle: "short",
+  }).format(date);
+}
+
+export default async function StudioDraftEditPage({ params, searchParams }: StudioDraftEditPageProps) {
+  const { localizationId } = await params;
+  if (!isStudioUuid(localizationId)) notFound();
+
+  const draft = await loadStudioDraftEditor(localizationId);
+  if (!draft) notFound();
+
+  const saved = firstSearchValue((await searchParams).saved) === "1";
+
+  return (
+    <main>
+      <header className="studio-topbar">
+        <div>
+          <p className="studio-kicker">Content workflow</p>
+          <h1 className="studio-title">Edit draft</h1>
+        </div>
+        <Link className="studio-content-secondary-link" href="/studio/content">
+          Back to content
+        </Link>
+      </header>
+
+      {saved ? (
+        <div className="studio-content-notice" role="status">
+          <strong>Draft saved.</strong>
+          <span>Latest private version loaded with conflict protection active.</span>
+        </div>
+      ) : null}
+
+      <section className="studio-editor-meta" aria-label="Draft identity">
+        <div className="studio-content-card-meta">
+          <span>{draft.contentType.name}</span>
+          <span>{studioLocaleLabel(draft.locale)}</span>
+          <span data-status={draft.status}>{studioEditorialStatusLabel(draft.status)}</span>
+          <span>Lock v{draft.lockVersion}</span>
+        </div>
+        <time dateTime={draft.updatedAt}>Updated {formatUpdatedAt(draft.updatedAt)}</time>
+      </section>
+
+      {draft.document.ok ? (
+        <StudioEditorForm
+          localizationId={draft.localizationId}
+          lockVersion={draft.lockVersion}
+          title={draft.title}
+          slug={draft.slug}
+          summary={draft.summary}
+          document={draft.document.document}
+        />
+      ) : (
+        <section className="studio-panel studio-content-error">
+          <p className="studio-kicker">Safe editing blocked</p>
+          <h2>This draft cannot be edited without risking data loss</h2>
+          <p>{draft.document.message}</p>
+          <p>The stored draft remains unchanged. Return to the content library or use a later editor checkpoint that supports these blocks.</p>
+          <Link className="studio-content-secondary-link" href="/studio/content">
+            Return to content
+          </Link>
+        </section>
+      )}
+    </main>
+  );
+}

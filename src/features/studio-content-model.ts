@@ -13,6 +13,12 @@ export type StudioContentTypeOption = Readonly<{
   slug: string;
 }>;
 
+export type StudioSubjectOption = Readonly<{
+  id: string;
+  name: string;
+  slug: string;
+}>;
+
 export type StudioContentListItem = Readonly<{
   localizationId: string;
   contentId: string;
@@ -23,6 +29,29 @@ export type StudioContentListItem = Readonly<{
   status: StudioEditorialStatus;
   updatedAt: string;
   contentType: StudioContentTypeOption;
+}>;
+
+export type StudioDraftCreateInput = Readonly<{
+  contentTypeId: string;
+  locale: StudioContentLocale;
+  title: string;
+  slug: string;
+  summary: string;
+  bodyJson: Readonly<{
+    schemaVersion: 1;
+    blocks: readonly Readonly<{
+      id: string;
+      type: "paragraph";
+      text: string;
+    }>[];
+  }>;
+  subjectIds: readonly string[];
+}>;
+
+export type StudioDraftCreateState = Readonly<{
+  status: "idle" | "error";
+  message: string;
+  fieldErrors: Readonly<Record<string, string>>;
 }>;
 
 type SearchParamValue = string | string[] | undefined;
@@ -82,4 +111,38 @@ export function studioEditorialStatusLabel(status: StudioEditorialStatus): strin
 
 export function studioLocaleLabel(locale: StudioContentLocale): string {
   return locale === "hi" ? "Hindi" : "English";
+}
+
+export function normalizeStudioDraftSlug(value: string, fallbackTitle: string): string {
+  const source = value.trim().length > 0 ? value : fallbackTitle;
+  return source
+    .normalize("NFKC")
+    .trim()
+    .toLocaleLowerCase("en")
+    .replace(/[^\p{L}\p{N}\p{M}-]+/gu, "-")
+    .replace(/-{2,}/g, "-")
+    .replace(/^-|-$/g, "")
+    .slice(0, 180)
+    .replace(/-$/g, "");
+}
+
+export function buildStudioDraftDocument(bodyText: string): StudioDraftCreateInput["bodyJson"] {
+  const blocks = bodyText
+    .split(/\n\s*\n/g)
+    .map((paragraph) => paragraph.replace(/\s*\n\s*/g, " ").trim())
+    .filter((paragraph) => paragraph.length > 0)
+    .map((text, index) => ({
+      id: `paragraph-${index + 1}`,
+      type: "paragraph" as const,
+      text,
+    }));
+
+  return {
+    schemaVersion: 1,
+    blocks,
+  };
+}
+
+export function isStudioUuid(value: string): boolean {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
 }

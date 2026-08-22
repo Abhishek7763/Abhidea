@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 import { getTableOfContents } from "./document-schema";
+import { ReaderControls } from "./reader-controls";
 import { resolveReaderFixtureMedia, type ReaderFixture } from "./reader-fixtures";
 import { StructuredDocumentRenderer } from "./structured-document-renderer";
 
@@ -85,13 +86,16 @@ export function ReaderView({ entry }: ReaderViewProps) {
             </div>
           </div>
 
-          <aside className="reader-language-card" aria-label="Reading language">
-            <span>{isHindi ? "पढ़ने की भाषा" : "Reading language"}</span>
-            <strong>{isHindi ? "हिन्दी" : "English"}</strong>
-            <Link href={alternateHref} hrefLang={entry.alternateLocale} lang={entry.alternateLocale}>
-              {isHindi ? "Read in English" : "हिन्दी में पढ़ें"}
-            </Link>
-          </aside>
+          <div className="reader-side-tools">
+            <aside className="reader-language-card" aria-label="Reading language">
+              <span>{isHindi ? "पढ़ने की भाषा" : "Reading language"}</span>
+              <strong>{isHindi ? "हिन्दी" : "English"}</strong>
+              <Link href={alternateHref} hrefLang={entry.alternateLocale} lang={entry.alternateLocale}>
+                {isHindi ? "Read in English" : "हिन्दी में पढ़ें"}
+              </Link>
+            </aside>
+            <ReaderControls locale={entry.locale} />
+          </div>
         </div>
       </header>
 

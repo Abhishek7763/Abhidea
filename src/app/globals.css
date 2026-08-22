@@ -8,6 +8,7 @@
 @import "../styles/reader-controls.css";
 @import "../styles/reader-experience.css";
 @import "../styles/reader-polish.css";
+@import "../styles/studio.css";
 
 @theme inline {
   --color-background: var(--background);

@@ -1,6 +1,5 @@
 import type { ReaderBlock } from "@/features/reader/document-schema";
 import type { ReaderFixture } from "@/features/reader/reader-fixtures";
-import { otherStudioContentLocale } from "@/features/studio-content-model";
 import type { StudioDraftEditorData, StudioEditionLink } from "@/features/studio-editor";
 
 function blockText(block: ReaderBlock): string {
@@ -39,7 +38,7 @@ export function buildStudioPreviewEntry(
   entry: ReaderFixture | null;
   alternateLocalizationId: string | null;
 }> {
-  const alternateLocale = otherStudioContentLocale(draft.locale);
+  const alternateLocale = draft.locale === "en" ? "hi" : "en";
   const alternateEdition = editions.find((edition) => edition.locale === alternateLocale) ?? null;
 
   if (!draft.document.ok) {

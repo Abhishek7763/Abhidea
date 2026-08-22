@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { StudioEditorForm } from "@/app/(studio)/studio/(protected)/content/[localizationId]/edit/editor-form";
+import { StudioPublishForm } from "@/app/(studio)/studio/(protected)/content/[localizationId]/edit/publish-form";
 import {
   isStudioUuid,
   otherStudioContentLocale,
@@ -9,7 +10,10 @@ import {
   studioLocaleLabel,
 } from "@/features/studio-content-model";
 import { loadStudioDraftEditor, loadStudioEditionLinks } from "@/features/studio-editor";
-import { studioPublicationStateLabel } from "@/features/studio-publication-model";
+import {
+  buildStudioPublishPreflight,
+  studioPublicationStateLabel,
+} from "@/features/studio-publication-model";
 import { loadStudioPublicationStatus } from "@/features/studio-publication";
 
 type StudioDraftEditPageProps = Readonly<{
@@ -44,9 +48,11 @@ export default async function StudioDraftEditPage({ params, searchParams }: Stud
   const editions = await loadStudioEditionLinks(draft.contentId);
   const counterpartLocale = otherStudioContentLocale(draft.locale);
   const counterpart = editions.find((edition) => edition.locale === counterpartLocale);
+  const preflight = buildStudioPublishPreflight(draft);
   const resolvedSearchParams = await searchParams;
   const saved = firstSearchValue(resolvedSearchParams.saved) === "1";
   const linked = firstSearchValue(resolvedSearchParams.linked) === "1";
+  const published = firstSearchValue(resolvedSearchParams.published) === "1";
 
   return (
     <main>
@@ -65,7 +71,12 @@ export default async function StudioDraftEditPage({ params, searchParams }: Stud
         </div>
       </header>
 
-      {linked ? (
+      {published ? (
+        <div className="studio-content-notice" role="status">
+          <strong>Published safely.</strong>
+          <span>An immutable revision now owns the live snapshot. The working draft was reset to Draft with a fresh lock version.</span>
+        </div>
+      ) : linked ? (
         <div className="studio-content-notice" role="status">
           <strong>Linked edition created.</strong>
           <span>This localized draft shares the same logical content identity while keeping its writing independent.</span>
@@ -92,7 +103,7 @@ export default async function StudioDraftEditPage({ params, searchParams }: Stud
           <p className="studio-kicker">Publication safety</p>
           <h2 id="publication-safety-heading">Draft and live stay separate</h2>
           <p>
-            Saving this editor only updates the private working draft. A future publish action will create an immutable revision before replacing the live snapshot.
+            Saving updates only the private working draft. Publishing creates an immutable revision first, then replaces the live snapshot in the same database transaction.
           </p>
         </div>
 
@@ -101,16 +112,14 @@ export default async function StudioDraftEditPage({ params, searchParams }: Stud
           <strong>{publication ? studioPublicationStateLabel(publication.state) : "Never published"}</strong>
           {publication ? (
             <>
-              <p>
-                Revision {publication.revisionNumber} owns the saved live snapshot. Draft changes remain private until a later publish or republish action succeeds.
-              </p>
+              <p>Revision {publication.revisionNumber} owns the current saved live snapshot.</p>
               <dl>
                 <div>
                   <dt>Live slug</dt>
                   <dd>{publication.slug}</dd>
                 </div>
                 <div>
-                  <dt>Published</dt>
+                  <dt>First published</dt>
                   <dd>{formatUpdatedAt(publication.publishedAt)}</dd>
                 </div>
               </dl>
@@ -121,13 +130,37 @@ export default async function StudioDraftEditPage({ params, searchParams }: Stud
         </div>
       </section>
 
+      <section className="studio-panel studio-publish-preflight" aria-labelledby="publish-preflight-heading">
+        <div>
+          <p className="studio-kicker">Publish preflight</p>
+          <h2 id="publish-preflight-heading">Publish only the saved Ready draft</h2>
+          <p>
+            The database re-checks membership, lock version, Reader body shape and live slug uniqueness before any revision is committed.
+          </p>
+        </div>
+
+        {preflight.ready ? (
+          <div className="studio-publish-ready">
+            <strong>Saved draft passes local preflight.</strong>
+            <p>Unsaved editor changes are not included. Publish will re-check the stored draft atomically.</p>
+            <StudioPublishForm localizationId={draft.localizationId} lockVersion={draft.lockVersion} />
+          </div>
+        ) : (
+          <div className="studio-publish-blocked">
+            <strong>Publish blocked</strong>
+            <ul>
+              {preflight.blockers.map((blocker) => <li key={blocker}>{blocker}</li>)}
+            </ul>
+            <p>Fix these items in the editor, choose Ready, then Save draft. Publish becomes available after reload.</p>
+          </div>
+        )}
+      </section>
+
       <section className="studio-panel studio-draft-section" aria-labelledby="bilingual-editions-heading">
         <div>
           <p className="studio-kicker">Bilingual editions</p>
           <h2 id="bilingual-editions-heading">English and Hindi stay linked, not duplicated</h2>
-          <p>
-            Content Type and Subjects are shared at the logical-content level. Each language keeps its own title, slug, summary, body and editorial state.
-          </p>
+          <p>Content Type and Subjects are shared at the logical-content level. Each language keeps its own title, slug, summary, body and editorial state.</p>
         </div>
 
         <div className="studio-draft-fields">
@@ -156,6 +189,7 @@ export default async function StudioDraftEditPage({ params, searchParams }: Stud
           title={draft.title}
           slug={draft.slug}
           summary={draft.summary}
+          status={draft.status}
           document={draft.document.document}
         />
       ) : (
@@ -164,9 +198,7 @@ export default async function StudioDraftEditPage({ params, searchParams }: Stud
           <h2>This draft cannot be edited without risking data loss</h2>
           <p>{draft.document.message}</p>
           <p>The stored draft remains unchanged. Return to the content library or use a later editor checkpoint that supports these blocks.</p>
-          <Link className="studio-content-secondary-link" href="/studio/content">
-            Return to content
-          </Link>
+          <Link className="studio-content-secondary-link" href="/studio/content">Return to content</Link>
         </section>
       )}
     </main>

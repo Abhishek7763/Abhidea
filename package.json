@@ -9,9 +9,11 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
+    "format:check": "node scripts/check-format.mjs",
     "lint": "eslint .",
     "typecheck": "next typegen && tsc --noEmit",
-    "verify": "npm run lint && npm run typecheck && npm run build"
+    "test": "node --test test/*.test.mjs",
+    "verify": "npm run format:check && npm run lint && npm run typecheck && npm test && npm run build"
   },
   "dependencies": {
     "next": "16.3.2",

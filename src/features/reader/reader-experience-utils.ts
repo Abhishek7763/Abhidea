@@ -19,7 +19,7 @@ export function splitSpeechText(text: string, maxLength = 240): string[] {
   }
 
   for (const sentenceValue of sentences) {
-    let sentence = sentenceValue.trim();
+    const sentence = sentenceValue.trim();
     if (!sentence) continue;
 
     if (sentence.length > maxLength) {

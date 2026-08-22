@@ -9,6 +9,8 @@ import {
   studioLocaleLabel,
 } from "@/features/studio-content-model";
 import { loadStudioDraftEditor, loadStudioEditionLinks } from "@/features/studio-editor";
+import { studioPublicationStateLabel } from "@/features/studio-publication-model";
+import { loadStudioPublicationStatus } from "@/features/studio-publication";
 
 type StudioDraftEditPageProps = Readonly<{
   params: Promise<{ localizationId: string }>;
@@ -33,7 +35,10 @@ export default async function StudioDraftEditPage({ params, searchParams }: Stud
   const { localizationId } = await params;
   if (!isStudioUuid(localizationId)) notFound();
 
-  const draft = await loadStudioDraftEditor(localizationId);
+  const [draft, publication] = await Promise.all([
+    loadStudioDraftEditor(localizationId),
+    loadStudioPublicationStatus(localizationId),
+  ]);
   if (!draft) notFound();
 
   const editions = await loadStudioEditionLinks(draft.contentId);
@@ -80,6 +85,40 @@ export default async function StudioDraftEditPage({ params, searchParams }: Stud
           <span>Lock v{draft.lockVersion}</span>
         </div>
         <time dateTime={draft.updatedAt}>Updated {formatUpdatedAt(draft.updatedAt)}</time>
+      </section>
+
+      <section className="studio-panel studio-publication-safety" aria-labelledby="publication-safety-heading">
+        <div>
+          <p className="studio-kicker">Publication safety</p>
+          <h2 id="publication-safety-heading">Draft and live stay separate</h2>
+          <p>
+            Saving this editor only updates the private working draft. A future publish action will create an immutable revision before replacing the live snapshot.
+          </p>
+        </div>
+
+        <div className="studio-publication-status" data-state={publication?.state ?? "never-published"}>
+          <span>Current live state</span>
+          <strong>{publication ? studioPublicationStateLabel(publication.state) : "Never published"}</strong>
+          {publication ? (
+            <>
+              <p>
+                Revision {publication.revisionNumber} owns the saved live snapshot. Draft changes remain private until a later publish or republish action succeeds.
+              </p>
+              <dl>
+                <div>
+                  <dt>Live slug</dt>
+                  <dd>{publication.slug}</dd>
+                </div>
+                <div>
+                  <dt>Published</dt>
+                  <dd>{formatUpdatedAt(publication.publishedAt)}</dd>
+                </div>
+              </dl>
+            </>
+          ) : (
+            <p>No public snapshot exists for this language edition yet.</p>
+          )}
+        </div>
       </section>
 
       <section className="studio-panel studio-draft-section" aria-labelledby="bilingual-editions-heading">

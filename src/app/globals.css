@@ -11,6 +11,7 @@
 @import "../styles/studio.css";
 @import "../styles/studio-auth.css";
 @import "../styles/studio-content.css";
+@import "../styles/studio-draft.css";
 
 @theme inline {
   --color-background: var(--background);

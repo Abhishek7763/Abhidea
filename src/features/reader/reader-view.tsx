@@ -7,6 +7,26 @@ import { StructuredDocumentRenderer } from "./structured-document-renderer";
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://abhidea.vercel.app";
 
+function contentTypeSlug(label: string): string {
+  return label
+    .trim()
+    .toLowerCase()
+    .replace(/&/g, "and")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
+function safeExternalUrl(value?: string): string | null {
+  if (!value) return null;
+
+  try {
+    const url = new URL(value);
+    return url.protocol === "https:" || url.protocol === "http:" ? url.toString() : null;
+  } catch {
+    return null;
+  }
+}
+
 export function buildReaderFixtureMetadata(entry: ReaderFixture): Metadata {
   const currentPath = `/${entry.locale}/read/${entry.slug}`;
   const alternatePath = `/${entry.alternateLocale}/read/${entry.alternateSlug}`;
@@ -37,6 +57,8 @@ export function ReaderView({ entry }: ReaderViewProps) {
   const showToc = toc.length >= 3;
   const isHindi = entry.locale === "hi";
   const alternateHref = `/${entry.alternateLocale}/read/${entry.alternateSlug}`;
+  const typeSlug = contentTypeSlug(entry.contentType);
+  const contentTypeHref = typeSlug ? `/explore/type/${typeSlug}` : "/explore";
 
   return (
     <article className="signature-reader" lang={entry.locale} aria-labelledby="reader-title">
@@ -44,7 +66,7 @@ export function ReaderView({ entry }: ReaderViewProps) {
         <nav className="reader-breadcrumb" aria-label="Reader breadcrumb">
           <Link href="/explore">Explore</Link>
           <span aria-hidden="true">/</span>
-          <Link href="/explore/type/guide">{entry.contentType}</Link>
+          <Link href={contentTypeHref}>{entry.contentType}</Link>
         </nav>
 
         <div className="reader-header-grid">
@@ -100,16 +122,19 @@ export function ReaderView({ entry }: ReaderViewProps) {
             <p className="reader-section-label">{isHindi ? "स्रोत" : "Sources"}</p>
             <h2 id="reader-sources-heading">{isHindi ? "संदर्भ और आधार" : "References and basis"}</h2>
             <ol>
-              {entry.sources.map((source) => (
-                <li key={source.id}>
-                  {source.url ? (
-                    <a href={source.url} target="_blank" rel="noreferrer">{source.title}</a>
-                  ) : (
-                    <span>{source.title}</span>
-                  )}
-                  {source.authorOrOrg ? <small>{source.authorOrOrg}</small> : null}
-                </li>
-              ))}
+              {entry.sources.map((source) => {
+                const sourceUrl = safeExternalUrl(source.url);
+                return (
+                  <li key={source.id}>
+                    {sourceUrl ? (
+                      <a href={sourceUrl} target="_blank" rel="noreferrer">{source.title}</a>
+                    ) : (
+                      <span>{source.title}</span>
+                    )}
+                    {source.authorOrOrg ? <small>{source.authorOrOrg}</small> : null}
+                  </li>
+                );
+              })}
             </ol>
           </section>
         </div>

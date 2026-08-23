@@ -4,14 +4,30 @@ import { useRef, useState, type FormEvent } from "react";
 
 import {
   cancelStudioMediaUploadAction,
+  finalizeStudioMediaOptimizedVariantAction,
   finalizeStudioMediaUploadAction,
+  prepareStudioMediaOptimizedVariantAction,
   reserveStudioMediaUploadAction,
 } from "./actions";
+import {
+  optimizeStudioMediaImage,
+  uploadStudioMediaSignedVariant,
+} from "@/features/studio-media-client";
 
 const MAX_IMAGE_BYTES = 10 * 1024 * 1024;
 const ALLOWED_TYPES = new Set(["image/jpeg", "image/png", "image/webp", "image/avif"]);
 
-type UploadStage = "idle" | "checking" | "preparing" | "uploading" | "finalizing" | "error";
+type UploadStage =
+  | "idle"
+  | "checking"
+  | "preparing"
+  | "uploading"
+  | "finalizing"
+  | "optimizing"
+  | "preparing-optimization"
+  | "uploading-optimization"
+  | "finalizing-optimization"
+  | "error";
 
 type UploadState = Readonly<{
   stage: UploadStage;
@@ -51,12 +67,16 @@ function readText(formData: FormData, name: string): string {
   return typeof value === "string" ? value.trim() : "";
 }
 
+function openPendingOptimization(mediaId: string) {
+  window.location.assign(`/studio/media/${mediaId}?optimization=pending`);
+}
+
 export function MediaUploadForm() {
   const formRef = useRef<HTMLFormElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const [state, setState] = useState<UploadState>({
     stage: "idle",
-    message: "Choose one image. Draft uploads stay private until a later publish promotion step.",
+    message: "Choose one image. The original and optimized copy both stay private until content publishing needs them.",
   });
 
   const busy = !["idle", "error"].includes(state.stage);
@@ -104,7 +124,7 @@ export function MediaUploadForm() {
     }
 
     const { reservation } = reservationResult;
-    setState({ stage: "uploading", message: "Uploading directly to private Storage…" });
+    setState({ stage: "uploading", message: "Uploading original directly to private Storage…" });
 
     const uploadBody = new FormData();
     uploadBody.append("cacheControl", "3600");
@@ -137,7 +157,7 @@ export function MediaUploadForm() {
       return;
     }
 
-    setState({ stage: "finalizing", message: "Finalizing Media Library metadata…" });
+    setState({ stage: "finalizing", message: "Finalizing the private original…" });
     const finalizeResult = await finalizeStudioMediaUploadAction(reservation.mediaId, reservation.storageKey);
     if (!finalizeResult.ok) {
       const cleanup = await cancelStudioMediaUploadAction(reservation.mediaId, reservation.storageKey);
@@ -148,8 +168,55 @@ export function MediaUploadForm() {
       return;
     }
 
+    let optimized;
+    try {
+      setState({ stage: "optimizing", message: "Creating a smaller WebP copy on this device…" });
+      optimized = await optimizeStudioMediaImage(file);
+    } catch {
+      openPendingOptimization(reservation.mediaId);
+      return;
+    }
+
+    setState({ stage: "preparing-optimization", message: "Preparing private optimized Storage…" });
+    const optimizationReservation = await prepareStudioMediaOptimizedVariantAction(reservation.mediaId);
+    if (!optimizationReservation.ok) {
+      openPendingOptimization(reservation.mediaId);
+      return;
+    }
+
+    let optimizedUpload: Response;
+    try {
+      setState({ stage: "uploading-optimization", message: "Uploading optimized WebP privately…" });
+      optimizedUpload = await uploadStudioMediaSignedVariant(
+        optimizationReservation.reservation.signedUploadUrl,
+        optimizationReservation.reservation.publishableKey,
+        optimized.blob,
+      );
+    } catch {
+      openPendingOptimization(reservation.mediaId);
+      return;
+    }
+
+    if (!optimizedUpload.ok && optimizedUpload.status !== 409) {
+      openPendingOptimization(reservation.mediaId);
+      return;
+    }
+
+    setState({ stage: "finalizing-optimization", message: "Saving optimized dimensions and size…" });
+    const optimizedFinalize = await finalizeStudioMediaOptimizedVariantAction(
+      reservation.mediaId,
+      optimizationReservation.reservation.storageKey,
+      optimized.width,
+      optimized.height,
+    );
+
+    if (!optimizedFinalize.ok) {
+      openPendingOptimization(reservation.mediaId);
+      return;
+    }
+
     formRef.current?.reset();
-    window.location.assign("/studio/media?uploaded=1");
+    window.location.assign("/studio/media?uploaded=1&optimized=1");
   }
 
   return (
@@ -165,7 +232,7 @@ export function MediaUploadForm() {
             disabled={busy}
             required
           />
-          <small>JPEG, PNG, WebP or AVIF · maximum 10 MiB</small>
+          <small>JPEG, PNG, WebP or AVIF · maximum 10 MiB · optimized locally after upload</small>
         </label>
 
         <label>

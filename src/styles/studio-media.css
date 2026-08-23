@@ -1,6 +1,7 @@
 .studio-media-upload-panel,
 .studio-media-library,
-.studio-media-usages {
+.studio-media-usages,
+.studio-media-optimization-wrap {
   margin-top: 1rem;
 }
 
@@ -13,7 +14,8 @@
 }
 
 .studio-media-section-heading h2,
-.studio-media-detail-editor h2 {
+.studio-media-detail-editor h2,
+.studio-media-optimization-panel h2 {
   margin: 0.2rem 0 0;
 }
 
@@ -71,7 +73,8 @@
 }
 
 .studio-media-upload-foot button,
-.studio-media-metadata-foot button {
+.studio-media-metadata-foot button,
+.studio-media-optimization-panel button {
   flex: 0 0 auto;
   border: 0;
   border-radius: 999px;
@@ -83,7 +86,8 @@
 }
 
 .studio-media-upload-foot button:disabled,
-.studio-media-metadata-foot button:disabled {
+.studio-media-metadata-foot button:disabled,
+.studio-media-optimization-panel button:disabled {
   cursor: progress;
   opacity: 0.65;
 }
@@ -94,7 +98,8 @@
 }
 
 .studio-media-upload-status[data-stage="error"],
-.studio-media-metadata-foot [data-status="error"] {
+.studio-media-metadata-foot [data-status="error"],
+.studio-media-optimization-panel[data-stage="error"] p[role="status"] {
   color: var(--danger);
 }
 
@@ -157,8 +162,13 @@
   font-size: 0.78rem;
 }
 
-.studio-media-card-meta [data-state="ready"] {
+.studio-media-card-meta [data-state="ready"],
+.studio-media-card-meta [data-state="optimized"] {
   color: var(--success);
+}
+
+.studio-media-card-meta [data-state="optimized"] {
+  font-weight: 750;
 }
 
 .studio-media-card-body > a {
@@ -222,6 +232,22 @@
   margin: 0;
 }
 
+.studio-media-optimization-panel {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.studio-media-optimization-panel > div {
+  min-width: 0;
+}
+
+.studio-media-optimization-panel p[role="status"] {
+  margin: 0.55rem 0 0;
+  color: var(--text-secondary);
+}
+
 .studio-media-usage-list {
   display: grid;
   gap: 0.65rem;
@@ -260,13 +286,15 @@
 @media (max-width: 560px) {
   .studio-media-upload-foot,
   .studio-media-metadata-foot,
-  .studio-media-section-heading {
+  .studio-media-section-heading,
+  .studio-media-optimization-panel {
     align-items: stretch;
     flex-direction: column;
   }
 
   .studio-media-upload-foot button,
-  .studio-media-metadata-foot button {
+  .studio-media-metadata-foot button,
+  .studio-media-optimization-panel button {
     width: 100%;
   }
 

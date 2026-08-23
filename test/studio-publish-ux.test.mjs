@@ -29,7 +29,7 @@ test("editor page exposes a visible Draft to Live workflow and actionable blocke
   const page = await readFile(editPageUrl, "utf8");
 
   assert.match(page, /Publish workflow/);
-  assert.match(page, /Mark Ready &amp; Save/);
+  assert.match(page, /Mark Ready (?:&amp;|&) Save/);
   assert.match(page, /Continue to Publish/);
   assert.match(page, /Publish is still locked/);
   assert.match(page, /Fix in Draft details/);

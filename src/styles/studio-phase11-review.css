@@ -1,0 +1,271 @@
+.studio-preview-workbench {
+  min-width: 0;
+}
+
+.studio-preview-control-panel {
+  display: grid;
+  gap: 0.85rem;
+  margin-bottom: 1rem;
+}
+
+.studio-preview-control-group {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.studio-preview-control-group > span {
+  color: var(--text-secondary);
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.studio-preview-control-group > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.studio-preview-control-group a,
+.studio-preview-control-group div > span {
+  min-height: 40px;
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  background: var(--surface-subtle);
+  padding: 0.55rem 0.8rem;
+  color: var(--text-secondary);
+  font-size: 0.76rem;
+  font-weight: 750;
+  text-decoration: none;
+}
+
+.studio-preview-control-group a[aria-current="page"],
+.studio-preview-control-group span[aria-current="page"] {
+  border-color: color-mix(in srgb, var(--accent) 45%, var(--border));
+  background: var(--accent-soft);
+  color: var(--text-primary);
+}
+
+.studio-preview-control-group span[aria-disabled="true"] {
+  opacity: 0.55;
+}
+
+.studio-preview-stage {
+  min-width: 0;
+  overflow: auto;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  background: color-mix(in srgb, var(--surface-subtle) 80%, var(--background));
+  padding: 0.65rem;
+}
+
+.studio-preview-device-label {
+  margin: 0 auto 0.55rem;
+  color: var(--text-secondary);
+  font-size: 0.68rem;
+  font-weight: 750;
+  text-align: center;
+  text-transform: capitalize;
+}
+
+.studio-preview-frame {
+  display: block;
+  width: 100%;
+  min-height: 760px;
+  margin-inline: auto;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-lg);
+  background: #fff;
+  box-shadow: var(--shadow-md);
+}
+
+.studio-preview-stage[data-device="desktop"] .studio-preview-frame {
+  width: 100%;
+  min-width: 720px;
+  height: min(82vh, 960px);
+}
+
+.studio-preview-stage[data-device="mobile"] .studio-preview-frame {
+  width: min(390px, 100%);
+  height: min(82vh, 844px);
+  min-height: 720px;
+}
+
+.studio-preview-frame-root {
+  min-height: 100vh;
+  background: var(--background);
+  color: var(--text-primary);
+}
+
+.studio-preview-frame-root[data-theme="light"] {
+  color-scheme: light;
+  --background: #f7f7f5;
+  --surface: #ffffff;
+  --surface-raised: #ffffff;
+  --surface-subtle: #efefeb;
+  --text-primary: #171717;
+  --text-secondary: #616161;
+  --text-muted: #777771;
+  --border: #e2e1dc;
+  --border-strong: #c8c7c0;
+  --accent: #6d4aff;
+  --accent-strong: #5535dc;
+  --accent-soft: #ece8ff;
+  --link: #5f43d4;
+  --reader-background: #fbfaf7;
+  --reader-surface: #ffffff;
+  --reader-text: #22201d;
+  --reader-text-secondary: #66615a;
+  --reader-link: #5f43d4;
+  --reader-border: #e4e0d9;
+}
+
+.studio-preview-frame-root[data-theme="dark"] {
+  color-scheme: dark;
+  --background: #0c0d0f;
+  --surface: #121417;
+  --surface-raised: #191c20;
+  --surface-subtle: #16181c;
+  --text-primary: #f4f4f0;
+  --text-secondary: #a7abb2;
+  --text-muted: #8b9098;
+  --border: #2a2e34;
+  --border-strong: #3b4048;
+  --accent: #a99cff;
+  --accent-strong: #c0b7ff;
+  --accent-soft: #282341;
+  --link: #b7adff;
+  --reader-background: #101113;
+  --reader-surface: #15171a;
+  --reader-text: #efeee9;
+  --reader-text-secondary: #aaa69f;
+  --reader-link: #b7adff;
+  --reader-border: #2d3035;
+}
+
+.studio-live-draft-empty,
+.studio-live-draft-hero,
+.studio-live-draft-summary,
+.studio-live-draft-blocks {
+  margin-bottom: 1rem;
+}
+
+.studio-live-draft-empty h2,
+.studio-live-draft-hero h2,
+.studio-live-draft-summary h2,
+.studio-live-draft-blocks h2 {
+  margin: 0.35rem 0 0;
+}
+
+.studio-live-draft-hero {
+  display: grid;
+  gap: 1rem;
+}
+
+.studio-live-draft-hero dl {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.65rem;
+  margin: 0;
+}
+
+.studio-live-draft-hero dl > div {
+  border-top: 1px solid var(--border);
+  padding-top: 0.6rem;
+}
+
+.studio-live-draft-hero dt {
+  color: var(--text-secondary);
+  font-size: 0.68rem;
+}
+
+.studio-live-draft-hero dd {
+  margin: 0.2rem 0 0;
+  font-size: 0.82rem;
+  font-weight: 750;
+}
+
+.studio-live-draft-summary {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.studio-live-draft-summary > span {
+  flex: 0 0 auto;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  padding: 0.45rem 0.65rem;
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
+.studio-live-draft-summary > span[data-changed="true"] {
+  border-color: color-mix(in srgb, var(--warning) 40%, var(--border));
+  background: var(--warning-soft);
+  color: var(--warning);
+}
+
+.studio-live-draft-field-grid {
+  display: grid;
+  gap: 0.8rem;
+  margin-bottom: 1rem;
+}
+
+.studio-live-draft-field {
+  display: grid;
+  gap: 0.65rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  padding: 1rem;
+}
+
+.studio-live-draft-field > span {
+  color: var(--text-secondary);
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.studio-live-draft-field small {
+  color: var(--text-secondary);
+  font-size: 0.68rem;
+}
+
+.studio-live-draft-field p {
+  margin: 0.2rem 0 0;
+  overflow-wrap: anywhere;
+  line-height: 1.55;
+}
+
+.studio-live-draft-field > strong {
+  justify-self: start;
+  border-radius: var(--radius-pill);
+  background: var(--surface-subtle);
+  padding: 0.35rem 0.55rem;
+  font-size: 0.68rem;
+}
+
+.studio-live-draft-field[data-changed="true"] {
+  border-color: color-mix(in srgb, var(--warning) 38%, var(--border));
+}
+
+@media (min-width: 52rem) {
+  .studio-preview-control-panel {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .studio-live-draft-hero {
+    grid-template-columns: minmax(0, 1.25fr) minmax(18rem, 0.75fr);
+  }
+
+  .studio-live-draft-field-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}

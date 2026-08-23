@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
+import { verifyPublishedReaderSnapshot } from "@/features/reader/published-reader";
 import {
   buildStudioDraftDocument,
   isStudioContentLocale,
@@ -21,7 +22,7 @@ import {
   StudioEditorRequestError,
   updateStudioDraft,
 } from "@/features/studio-editor";
-import type { StudioPublishActionState } from "@/features/studio-publication-model";
+import type { StudioPublishActionState } from "@/features/studio-publish-action-model";
 import {
   publishStudioDraft,
   StudioPublicationRequestError,
@@ -179,8 +180,9 @@ export async function publishStudioDraftAction(
     return { status: "error", message: "Publish identity is stale or invalid. Reload the draft before publishing." };
   }
 
+  let publishResult;
   try {
-    await publishStudioDraft(localizationId, expectedLockVersion);
+    publishResult = await publishStudioDraft(localizationId, expectedLockVersion);
   } catch (error) {
     if (error instanceof StudioPublicationRequestError && error.code === "40001") {
       return { status: "conflict", message: "This draft changed before publish completed. Reload before trying again." };
@@ -200,5 +202,15 @@ export async function publishStudioDraftAction(
   revalidatePath("/studio/content");
   revalidatePath(`/studio/content/${localizationId}/edit`);
   revalidatePath(`/studio/content/${localizationId}/preview`);
+
+  const publicSnapshot = await verifyPublishedReaderSnapshot(localizationId, publishResult.revisionId);
+  if (!publicSnapshot) {
+    return {
+      status: "pending",
+      message: "Published safely, but public Reader verification is still pending. Do not publish again; reload or use View live after a moment.",
+    };
+  }
+
+  revalidatePath(`/${publicSnapshot.locale}/read/${publicSnapshot.slug}`);
   redirect(`/studio/content/${localizationId}/edit?published=1`);
 }

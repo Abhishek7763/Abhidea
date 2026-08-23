@@ -23,6 +23,25 @@ type StudioContentListData = Readonly<{
   isTruncated: boolean;
 }>;
 
+export type StudioTrashListItem = Readonly<{
+  localizationId: string;
+  contentId: string;
+  title: string;
+  slug: string;
+  summary: string;
+  locale: "en" | "hi";
+  status: "draft" | "needs_review" | "ready";
+  lockVersion: number;
+  trashedAt: string;
+  contentType: StudioContentTypeOption;
+}>;
+
+export type StudioTrashListData = Readonly<{
+  items: readonly StudioTrashListItem[];
+  sourceCount: number;
+  isTruncated: boolean;
+}>;
+
 export type StudioDraftCreateOptions = Readonly<{
   contentTypes: readonly StudioContentTypeOption[];
   subjects: readonly StudioSubjectOption[];
@@ -60,6 +79,10 @@ function requiredString(value: unknown): string | null {
 
 function stringValue(value: unknown): string {
   return typeof value === "string" ? value : "";
+}
+
+function positiveInteger(value: unknown): number | null {
+  return typeof value === "number" && Number.isSafeInteger(value) && value > 0 ? value : null;
 }
 
 function getSupabaseConfig() {
@@ -172,6 +195,7 @@ function parseDraftListItem(value: unknown): StudioContentListItem | null {
   const updatedAt = requiredString(value.updated_at);
   const localization = isRecord(value.content_localizations) ? value.content_localizations : null;
   if (!localizationId || !isStudioEditorialStatus(status) || !updatedAt || !localization) return null;
+  if (localization.lifecycle_state !== "active") return null;
 
   const locale = localization.locale;
   const contentId = requiredString(localization.content_id);
@@ -190,6 +214,39 @@ function parseDraftListItem(value: unknown): StudioContentListItem | null {
     locale,
     status,
     updatedAt,
+    contentType,
+  };
+}
+
+function parseTrashListItem(value: unknown): StudioTrashListItem | null {
+  if (!isRecord(value)) return null;
+
+  const localizationId = requiredString(value.localization_id);
+  const status = value.editorial_status;
+  const lockVersion = positiveInteger(value.lock_version);
+  const localization = isRecord(value.content_localizations) ? value.content_localizations : null;
+  if (!localizationId || !isStudioEditorialStatus(status) || !lockVersion || !localization) return null;
+  if (localization.lifecycle_state !== "trashed") return null;
+
+  const locale = localization.locale;
+  const contentId = requiredString(localization.content_id);
+  const trashedAt = requiredString(localization.trashed_at);
+  const content = isRecord(localization.contents) ? localization.contents : null;
+  if (!isStudioContentLocale(locale) || !contentId || !trashedAt || !content) return null;
+
+  const contentType = parseContentType(content.content_types);
+  if (!contentType) return null;
+
+  return {
+    localizationId,
+    contentId,
+    title: stringValue(value.title),
+    slug: stringValue(value.slug),
+    summary: stringValue(value.summary),
+    locale,
+    status,
+    lockVersion,
+    trashedAt,
     contentType,
   };
 }
@@ -218,8 +275,9 @@ export async function loadStudioContentList(
   const draftsEndpoint = new URL(`${url}/rest/v1/content_drafts`);
   draftsEndpoint.searchParams.set(
     "select",
-    "localization_id,title,slug,summary,editorial_status,updated_at,content_localizations!inner(locale,content_id,contents!inner(content_types!inner(id,name,slug)))",
+    "localization_id,title,slug,summary,editorial_status,updated_at,content_localizations!inner(locale,content_id,lifecycle_state,contents!inner(content_types!inner(id,name,slug)))",
   );
+  draftsEndpoint.searchParams.set("content_localizations.lifecycle_state", "eq.active");
   draftsEndpoint.searchParams.set("order", "updated_at.desc");
   draftsEndpoint.searchParams.set("limit", String(DRAFT_WINDOW_SIZE));
 
@@ -246,6 +304,31 @@ export async function loadStudioContentList(
     loadedCount: sourceItems.length,
     sourceCount,
     isTruncated: sourceCount > sourceItems.length,
+  };
+}
+
+export async function loadStudioTrashList(): Promise<StudioTrashListData> {
+  const { url } = getSupabaseConfig();
+  const accessToken = await getStudioAccessToken();
+  const endpoint = new URL(`${url}/rest/v1/content_drafts`);
+  endpoint.searchParams.set(
+    "select",
+    "localization_id,title,slug,summary,editorial_status,lock_version,content_localizations!inner(locale,content_id,lifecycle_state,trashed_at,contents!inner(content_types!inner(id,name,slug)))",
+  );
+  endpoint.searchParams.set("content_localizations.lifecycle_state", "eq.trashed");
+  endpoint.searchParams.set("order", "updated_at.desc");
+  endpoint.searchParams.set("limit", String(DRAFT_WINDOW_SIZE));
+
+  const result = await fetchStudioRows(endpoint, accessToken, { count: true });
+  const items = result.rows
+    .map(parseTrashListItem)
+    .filter((value): value is StudioTrashListItem => value !== null);
+  const sourceCount = result.totalCount ?? items.length;
+
+  return {
+    items,
+    sourceCount,
+    isTruncated: sourceCount > items.length,
   };
 }
 

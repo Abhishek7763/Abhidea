@@ -33,6 +33,7 @@ export default async function StudioContentPage({ searchParams }: StudioContentP
   const activeFilters = hasActiveStudioContentFilters(data.filters);
   const filteredCount = data.items.length;
   const draftCreated = firstSearchValue(rawSearchParams.created) === "1";
+  const restored = firstSearchValue(rawSearchParams.restored) === "1";
 
   return (
     <main>
@@ -41,10 +42,20 @@ export default async function StudioContentPage({ searchParams }: StudioContentP
           <p className="studio-kicker">Workspace</p>
           <h1 className="studio-title">Content</h1>
         </div>
-        <span className="studio-status">CMS connected</span>
+        <div className="studio-content-filter-actions">
+          <Link className="studio-content-secondary-link" href="/studio/content/trash">
+            Trash
+          </Link>
+          <span className="studio-status">CMS connected</span>
+        </div>
       </header>
 
-      {draftCreated ? (
+      {restored ? (
+        <div className="studio-content-notice" role="status">
+          <strong>Edition restored.</strong>
+          <span>It is back in the private active library. Restore never republishes an archived Reader page automatically.</span>
+        </div>
+      ) : draftCreated ? (
         <div className="studio-content-notice" role="status">
           <strong>Draft saved.</strong>
           <span>The new localized draft is private and now appears in this library.</span>
@@ -63,7 +74,7 @@ export default async function StudioContentPage({ searchParams }: StudioContentP
             </Link>
           </div>
           <p>
-            Create, filter and explicitly edit private structured drafts through your Studio session and database RLS.
+            Create, filter and explicitly edit private structured drafts through your Studio session and database RLS. Trashed editions stay outside this active list until restored.
           </p>
         </div>
 
@@ -123,17 +134,22 @@ export default async function StudioContentPage({ searchParams }: StudioContentP
         {data.sourceCount === 0 ? (
           <div className="studio-panel studio-content-empty">
             <p className="studio-kicker">Create the first edition</p>
-            <h2>No drafts yet</h2>
-            <p>The CMS is connected and ready for a private English or Hindi draft.</p>
-            <Link className="studio-content-primary-link" href="/studio/content/new">
-              Create first draft
-            </Link>
+            <h2>No active drafts yet</h2>
+            <p>The CMS is connected and ready for a private English or Hindi draft. Trashed editions can be restored separately.</p>
+            <div className="studio-content-filter-actions">
+              <Link className="studio-content-primary-link" href="/studio/content/new">
+                Create first draft
+              </Link>
+              <Link className="studio-content-secondary-link" href="/studio/content/trash">
+                Open Trash
+              </Link>
+            </div>
           </div>
         ) : filteredCount === 0 ? (
           <div className="studio-panel studio-content-empty">
             <p className="studio-kicker">Filtered view</p>
             <h2>No drafts match these filters</h2>
-            <p>Try another combination or clear the filters to return to the full draft library.</p>
+            <p>Try another combination or clear the filters to return to the full active draft library.</p>
             <Link className="studio-content-clear-link" href="/studio/content">
               Clear filters
             </Link>

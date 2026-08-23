@@ -51,6 +51,7 @@ export type StudioEditionLink = Readonly<{
   localizationId: string;
   contentId: string;
   locale: StudioContentLocale;
+  lifecycleState: "active" | "trashed";
 }>;
 
 export type StudioLinkedEditionCreateInput = Readonly<{
@@ -157,6 +158,7 @@ function parseEditorRow(value: unknown): StudioDraftEditorData | null {
   if (!localizationId || !updatedAt || !lockVersion || !isStudioEditorialStatus(status) || !localization) {
     return null;
   }
+  if (localization.lifecycle_state !== "active") return null;
 
   const locale = localization.locale;
   const contentId = requiredString(localization.content_id);
@@ -186,8 +188,10 @@ function parseEditionLink(value: unknown): StudioEditionLink | null {
   const localizationId = requiredString(value.id);
   const contentId = requiredString(value.content_id);
   const locale = value.locale;
+  const lifecycleState = value.lifecycle_state;
   if (!localizationId || !contentId || !isStudioContentLocale(locale)) return null;
-  return { localizationId, contentId, locale };
+  if (lifecycleState !== "active" && lifecycleState !== "trashed") return null;
+  return { localizationId, contentId, locale, lifecycleState };
 }
 
 export async function loadStudioDraftEditor(localizationId: string): Promise<StudioDraftEditorData | null> {
@@ -195,9 +199,10 @@ export async function loadStudioDraftEditor(localizationId: string): Promise<Stu
   const endpoint = new URL(`${url}/rest/v1/content_drafts`);
   endpoint.searchParams.set(
     "select",
-    "localization_id,title,slug,summary,body_json,editorial_status,lock_version,updated_at,content_localizations!inner(locale,content_id,contents!inner(content_types!inner(id,name,slug)))",
+    "localization_id,title,slug,summary,body_json,editorial_status,lock_version,updated_at,content_localizations!inner(locale,content_id,lifecycle_state,contents!inner(content_types!inner(id,name,slug)))",
   );
   endpoint.searchParams.set("localization_id", `eq.${localizationId}`);
+  endpoint.searchParams.set("content_localizations.lifecycle_state", "eq.active");
   endpoint.searchParams.set("limit", "1");
 
   const payload = await requestStudioJson(endpoint);
@@ -212,7 +217,7 @@ export async function loadStudioDraftEditor(localizationId: string): Promise<Stu
 export async function loadStudioEditionLinks(contentId: string): Promise<readonly StudioEditionLink[]> {
   const { url } = getSupabaseConfig();
   const endpoint = new URL(`${url}/rest/v1/content_localizations`);
-  endpoint.searchParams.set("select", "id,content_id,locale");
+  endpoint.searchParams.set("select", "id,content_id,locale,lifecycle_state");
   endpoint.searchParams.set("content_id", `eq.${contentId}`);
   endpoint.searchParams.set("order", "locale.asc");
   endpoint.searchParams.set("limit", "2");

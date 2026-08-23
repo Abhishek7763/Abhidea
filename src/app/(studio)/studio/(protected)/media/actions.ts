@@ -5,18 +5,26 @@ import { revalidatePath } from "next/cache";
 import { isStudioUuid } from "@/features/studio-content-model";
 import {
   cancelStudioMediaUpload,
+  finalizeStudioMediaOptimizedVariant,
   finalizeStudioMediaUpload,
+  prepareStudioMediaOptimizedVariant,
   reserveStudioMediaUpload,
   StudioMediaRequestError,
   updateStudioMediaMetadata,
+  type StudioMediaOptimizationReservation,
   type StudioMediaUploadReservation,
 } from "@/features/studio-media";
 
 const ALLOWED_IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/webp", "image/avif"]);
 const MAX_IMAGE_BYTES = 10 * 1024 * 1024;
+const MAX_OPTIMIZED_EDGE = 1920;
 
 export type StudioMediaUploadActionResult =
   | Readonly<{ ok: true; reservation: StudioMediaUploadReservation }>
+  | Readonly<{ ok: false; message: string }>;
+
+export type StudioMediaOptimizationActionResult =
+  | Readonly<{ ok: true; reservation: StudioMediaOptimizationReservation }>
   | Readonly<{ ok: false; message: string }>;
 
 export type StudioMediaSimpleActionResult = Readonly<{
@@ -48,7 +56,7 @@ function requestErrorMessage(error: unknown, fallback: string): string {
     if (error.status === 401 || error.status === 403 || error.code === "42501") {
       return "Your Studio session is no longer authorized. Reload and sign in again.";
     }
-    if (error.code === "22023") return "Media details or upload state are invalid. Refresh and try again.";
+    if (error.code === "22023") return "Media details or workflow state are invalid. Refresh and try again.";
   }
   return fallback;
 }
@@ -139,6 +147,57 @@ export async function cancelStudioMediaUploadAction(
     return {
       ok: false,
       message: requestErrorMessage(error, "Automatic cleanup could not be completed. The staged record was left intact for safe recovery."),
+    };
+  }
+}
+
+export async function prepareStudioMediaOptimizedVariantAction(
+  mediaId: string,
+): Promise<StudioMediaOptimizationActionResult> {
+  if (!isStudioUuid(mediaId)) {
+    return { ok: false, message: "Media identity is invalid." };
+  }
+
+  try {
+    const reservation = await prepareStudioMediaOptimizedVariant(mediaId);
+    return { ok: true, reservation };
+  } catch (error) {
+    return {
+      ok: false,
+      message: requestErrorMessage(error, "A private optimization ticket could not be created."),
+    };
+  }
+}
+
+export async function finalizeStudioMediaOptimizedVariantAction(
+  mediaId: string,
+  storageKey: string,
+  width: number,
+  height: number,
+): Promise<StudioMediaSimpleActionResult> {
+  if (!isStudioUuid(mediaId) || !storageKey.startsWith("optimized/")) {
+    return { ok: false, message: "Optimized media identity is invalid." };
+  }
+  if (
+    !Number.isSafeInteger(width) ||
+    !Number.isSafeInteger(height) ||
+    width < 1 ||
+    height < 1 ||
+    width > MAX_OPTIMIZED_EDGE ||
+    height > MAX_OPTIMIZED_EDGE
+  ) {
+    return { ok: false, message: "Optimized image dimensions are invalid." };
+  }
+
+  try {
+    await finalizeStudioMediaOptimizedVariant(mediaId, storageKey, width, height);
+    revalidatePath("/studio/media");
+    revalidatePath(`/studio/media/${mediaId}`);
+    return { ok: true, message: "Private WebP optimization completed." };
+  } catch (error) {
+    return {
+      ok: false,
+      message: requestErrorMessage(error, "Optimized media finalization failed. The original private image remains safe."),
     };
   }
 }

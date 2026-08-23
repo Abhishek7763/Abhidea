@@ -1,37 +1,38 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
-import { getDemoReaderFixture } from "@/features/reader/reader-demo-fixtures";
-import { getReaderFixture } from "@/features/reader/reader-fixtures";
-import { buildReaderFixtureMetadata, ReaderView } from "@/features/reader/reader-view";
+import { resolveReaderEntry } from "@/features/reader/reader-delivery";
+import {
+  buildPublishedReaderMetadata,
+  buildReaderFixtureMetadata,
+  ReaderView,
+} from "@/features/reader/reader-view";
 
 type ReaderPageProps = Readonly<{
   params: Promise<{ slug: string }>;
 }>;
 
-function findReaderEntry(slug: string) {
-  return getReaderFixture("hi", slug) ?? getDemoReaderFixture("hi", slug);
-}
-
 export async function generateMetadata({ params }: ReaderPageProps): Promise<Metadata> {
   const { slug } = await params;
-  const entry = findReaderEntry(slug);
+  const resolved = await resolveReaderEntry("hi", slug);
 
-  if (!entry) {
+  if (!resolved) {
     return {
       title: "Reader",
       robots: { index: false, follow: false },
     };
   }
 
-  return buildReaderFixtureMetadata(entry);
+  return resolved.source === "published"
+    ? buildPublishedReaderMetadata(resolved.entry)
+    : buildReaderFixtureMetadata(resolved.entry);
 }
 
 export default async function HindiReaderPage({ params }: ReaderPageProps) {
   const { slug } = await params;
-  const entry = findReaderEntry(slug);
+  const resolved = await resolveReaderEntry("hi", slug);
 
-  if (!entry) notFound();
+  if (!resolved) notFound();
 
-  return <ReaderView entry={entry} />;
+  return <ReaderView entry={resolved.entry} />;
 }

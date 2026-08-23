@@ -32,10 +32,12 @@ test("public Reader loader reads published snapshots only", async () => {
 
 test("published CMS content wins before QA fixture fallback", async () => {
   const source = await readFile(deliveryUrl, "utf8");
+  const publishedCall = source.indexOf("const published = await getPublishedReaderEntry");
+  const fixtureCall = source.indexOf("const fixture = getReaderFixture");
 
-  assert.match(source, /await getPublishedReaderEntry/);
-  assert.match(source, /getReaderFixture/);
-  assert.ok(source.indexOf("await getPublishedReaderEntry") < source.indexOf("getReaderFixture"));
+  assert.ok(publishedCall >= 0);
+  assert.ok(fixtureCall >= 0);
+  assert.ok(publishedCall < fixtureCall);
 });
 
 test("Reader metadata distinguishes published pages from noindex fixtures", async () => {

@@ -1,0 +1,179 @@
+.studio-activity-intro {
+  display: grid;
+  gap: 1rem;
+}
+
+.studio-activity-intro > span {
+  width: fit-content;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  background: var(--surface-subtle);
+  padding: 0.45rem 0.7rem;
+  color: var(--text-secondary);
+  font-size: 0.7rem;
+  font-weight: 800;
+}
+
+.studio-activity-filters {
+  display: flex;
+  gap: 0.5rem;
+  margin: 1rem 0;
+  overflow-x: auto;
+  padding-bottom: 0.15rem;
+  scrollbar-width: thin;
+}
+
+.studio-activity-filters a {
+  flex: 0 0 auto;
+  min-height: 42px;
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  background: var(--surface);
+  padding: 0.55rem 0.8rem;
+  color: var(--text-secondary);
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.studio-activity-filters a[aria-current="page"] {
+  border-color: color-mix(in srgb, var(--accent) 42%, var(--border));
+  background: color-mix(in srgb, var(--accent) 10%, var(--surface));
+  color: var(--text-primary);
+}
+
+.studio-activity-list {
+  display: grid;
+  gap: 0.8rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.studio-activity-card {
+  position: relative;
+  display: grid;
+  gap: 0.9rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  background: color-mix(in srgb, var(--surface) 95%, transparent);
+  padding: 1rem;
+}
+
+.studio-activity-card::before {
+  position: absolute;
+  inset: 1rem auto 1rem 0;
+  width: 3px;
+  border-radius: 999px;
+  background: var(--border);
+  content: "";
+}
+
+.studio-activity-card[data-event="published"]::before,
+.studio-activity-card[data-event="republished"]::before {
+  background: var(--success);
+}
+
+.studio-activity-card[data-event="archived"]::before,
+.studio-activity-card[data-event="trashed"]::before {
+  background: var(--warning);
+}
+
+.studio-activity-card[data-event="restored"]::before {
+  background: var(--accent);
+}
+
+.studio-activity-card-topline {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.studio-activity-card-topline time {
+  color: var(--text-secondary);
+  font-size: 0.68rem;
+  text-align: right;
+}
+
+.studio-activity-badge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  background: var(--surface-subtle);
+  padding: 0.3rem 0.55rem;
+  font-size: 0.66rem;
+  font-weight: 850;
+}
+
+.studio-activity-copy h2 {
+  margin: 0;
+  font-size: 1rem;
+  line-height: 1.3;
+}
+
+.studio-activity-copy p {
+  margin: 0.35rem 0 0;
+  color: var(--text-secondary);
+  font-size: 0.78rem;
+  line-height: 1.55;
+}
+
+.studio-activity-meta {
+  display: grid;
+  gap: 0.65rem;
+  margin: 0;
+}
+
+.studio-activity-meta div {
+  min-width: 0;
+  border-top: 1px solid var(--border);
+  padding-top: 0.55rem;
+}
+
+.studio-activity-meta dt,
+.studio-activity-meta dd {
+  margin: 0;
+}
+
+.studio-activity-meta dt {
+  color: var(--text-secondary);
+  font-size: 0.64rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.studio-activity-meta dd {
+  margin-top: 0.2rem;
+  overflow-wrap: anywhere;
+  font-size: 0.73rem;
+}
+
+.studio-activity-empty {
+  margin-top: 1rem;
+}
+
+/* Phase 11G adds a fifth first-class Studio destination on mobile. */
+.studio-mobile-nav {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+
+.studio-mobile-nav a {
+  font-size: 0.62rem;
+}
+
+@media (min-width: 42rem) {
+  .studio-activity-intro {
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: start;
+  }
+
+  .studio-activity-meta {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}

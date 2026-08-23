@@ -18,6 +18,7 @@
 @import "../styles/studio-publish-workflow.css";
 @import "../styles/studio-activity.css";
 @import "../styles/studio-phase11-review.css";
+@import "../styles/studio-media.css";
 
 @theme inline {
   --color-background: var(--background);

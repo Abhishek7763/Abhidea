@@ -1,0 +1,272 @@
+.studio-publish-workflow {
+  display: grid;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  border-color: color-mix(in srgb, var(--accent) 26%, var(--border));
+}
+
+.studio-publish-workflow[data-stage="ready"] {
+  border-color: color-mix(in srgb, var(--success) 44%, var(--border));
+}
+
+.studio-publish-workflow[data-stage="published"] {
+  border-color: color-mix(in srgb, var(--success) 58%, var(--border));
+  background: color-mix(in srgb, var(--success) 5%, var(--surface));
+}
+
+.studio-publish-workflow-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.8rem;
+}
+
+.studio-publish-workflow-heading h2 {
+  margin: 0.35rem 0 0;
+  font-size: clamp(1.2rem, 5vw, 1.65rem);
+  letter-spacing: -0.03em;
+}
+
+.studio-publish-workflow-heading p:last-child {
+  max-width: 48rem;
+  margin: 0.5rem 0 0;
+  color: var(--text-secondary);
+  font-size: 0.78rem;
+  line-height: 1.55;
+}
+
+.studio-publish-workflow-heading > span {
+  flex: 0 0 auto;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  background: var(--surface-subtle);
+  padding: 0.35rem 0.55rem;
+  color: var(--text-primary);
+  font-size: 0.66rem;
+  font-weight: 850;
+}
+
+.studio-publish-workflow[data-stage="ready"] .studio-publish-workflow-heading > span,
+.studio-publish-workflow[data-stage="published"] .studio-publish-workflow-heading > span {
+  border-color: color-mix(in srgb, var(--success) 42%, var(--border));
+  color: var(--success);
+}
+
+.studio-publish-steps {
+  display: grid;
+  gap: 0.45rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.studio-publish-steps li {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 0.65rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface-subtle);
+  padding: 0.65rem;
+}
+
+.studio-publish-steps li > span {
+  display: inline-flex;
+  width: 1.9rem;
+  height: 1.9rem;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-pill);
+  background: var(--surface-raised);
+  color: var(--text-secondary);
+  font-size: 0.68rem;
+  font-weight: 900;
+}
+
+.studio-publish-steps li > div {
+  display: grid;
+  min-width: 0;
+  gap: 0.08rem;
+}
+
+.studio-publish-steps strong {
+  font-size: 0.76rem;
+}
+
+.studio-publish-steps small {
+  color: var(--text-secondary);
+  font-size: 0.64rem;
+  line-height: 1.35;
+}
+
+.studio-publish-steps li[data-state="complete"] {
+  border-color: color-mix(in srgb, var(--success) 28%, var(--border));
+}
+
+.studio-publish-steps li[data-state="complete"] > span {
+  background: color-mix(in srgb, var(--success) 14%, var(--surface));
+  color: var(--success);
+}
+
+.studio-publish-steps li[data-state="current"] {
+  border-color: color-mix(in srgb, var(--accent) 52%, var(--border));
+  background: color-mix(in srgb, var(--accent) 8%, var(--surface));
+}
+
+.studio-publish-steps li[data-state="current"] > span {
+  background: var(--accent);
+  color: var(--accent-foreground, #fff);
+}
+
+.studio-publish-steps li[data-state="upcoming"] {
+  opacity: 0.7;
+}
+
+.studio-publish-workflow-action {
+  display: grid;
+  gap: 0.4rem;
+  border-top: 1px solid var(--border);
+  padding-top: 0.85rem;
+}
+
+.studio-publish-workflow-action a,
+.studio-publish-fix-link,
+.studio-publication-live-link,
+.studio-publish-success-notice a,
+.studio-ready-saved-notice a {
+  display: inline-flex;
+  min-height: 44px;
+  width: fit-content;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-md);
+  background: var(--accent);
+  padding: 0.65rem 0.85rem;
+  color: var(--accent-foreground, #fff);
+  font-size: 0.72rem;
+  font-weight: 850;
+  text-decoration: none;
+}
+
+.studio-publish-workflow-action span {
+  color: var(--text-secondary);
+  font-size: 0.68rem;
+  line-height: 1.45;
+}
+
+.studio-publish-fix-link,
+.studio-publication-live-link {
+  margin-top: 0.2rem;
+  border: 1px solid var(--border);
+  background: var(--surface-raised);
+  color: var(--text-primary);
+}
+
+.studio-publish-success-notice,
+.studio-ready-saved-notice {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.75rem;
+}
+
+.studio-publish-success-notice > div,
+.studio-ready-saved-notice > div {
+  display: grid;
+  gap: 0.2rem;
+}
+
+.studio-ready-shortcut {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface-subtle);
+  padding: 0.75rem;
+}
+
+.studio-ready-shortcut[data-ready="true"] {
+  border-color: color-mix(in srgb, var(--success) 42%, var(--border));
+  background: color-mix(in srgb, var(--success) 7%, var(--surface));
+}
+
+.studio-ready-shortcut > div {
+  display: grid;
+  gap: 0.18rem;
+}
+
+.studio-ready-shortcut strong {
+  font-size: 0.78rem;
+}
+
+.studio-ready-shortcut[data-ready="true"] strong {
+  color: var(--success);
+}
+
+.studio-ready-shortcut p {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 0.68rem;
+  line-height: 1.5;
+}
+
+.studio-ready-shortcut button {
+  min-height: 44px;
+  border: 1px solid color-mix(in srgb, var(--accent) 48%, var(--border));
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--accent) 9%, var(--surface));
+  color: var(--text-primary);
+  padding: 0.6rem 0.8rem;
+  font-size: 0.72rem;
+  font-weight: 850;
+  cursor: pointer;
+}
+
+.studio-ready-shortcut button:focus-visible,
+.studio-publish-workflow-action a:focus-visible,
+.studio-publish-fix-link:focus-visible,
+.studio-publication-live-link:focus-visible,
+.studio-publish-success-notice a:focus-visible,
+.studio-ready-saved-notice a:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--accent) 24%, transparent);
+  outline-offset: 2px;
+}
+
+.studio-draft-savebar[data-ready="true"] {
+  border-color: color-mix(in srgb, var(--success) 44%, var(--border));
+  background: color-mix(in srgb, var(--success) 6%, var(--surface));
+}
+
+.studio-draft-savebar[data-ready="true"] .studio-draft-save-actions button {
+  background: var(--success);
+}
+
+@media (min-width: 42rem) {
+  .studio-publish-success-notice,
+  .studio-ready-saved-notice,
+  .studio-ready-shortcut {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .studio-publish-success-notice > div,
+  .studio-ready-saved-notice > div,
+  .studio-ready-shortcut > div {
+    min-width: 0;
+  }
+}
+
+@media (min-width: 48rem) {
+  .studio-publish-steps {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+
+  .studio-publish-steps li {
+    align-items: flex-start;
+  }
+}

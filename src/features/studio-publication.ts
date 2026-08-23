@@ -138,3 +138,22 @@ export async function publishStudioDraft(
   if (!result) throw new Error("Studio publish returned an incomplete result.");
   return result;
 }
+
+export async function archiveStudioPublication(
+  localizationId: string,
+  expectedRevisionId: string,
+): Promise<void> {
+  const { url } = getSupabaseConfig();
+  const endpoint = new URL(`${url}/rest/v1/rpc/archive_published_localization`);
+  const payload = await requestPublicationJson(endpoint, {
+    method: "POST",
+    body: JSON.stringify({
+      p_localization_id: localizationId,
+      p_expected_revision_id: expectedRevisionId,
+    }),
+  });
+
+  if (!Array.isArray(payload) || payload.length !== 1 || !isRecord(payload[0]) || payload[0].publication_state !== "archived") {
+    throw new Error("Studio archive returned an invalid result payload.");
+  }
+}

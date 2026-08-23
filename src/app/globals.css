@@ -14,6 +14,7 @@
 @import "../styles/studio-editor.css";
 @import "../styles/studio-preview.css";
 @import "../styles/studio-publication.css";
+@import "../styles/studio-revisions.css";
 
 @theme inline {
   --color-background: var(--background);

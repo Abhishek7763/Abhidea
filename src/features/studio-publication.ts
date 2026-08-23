@@ -3,11 +3,14 @@ import { cookies } from "next/headers";
 import {
   parseStudioPublicationRow,
   parseStudioPublishResultRow,
+  parseStudioRevisionRow,
   type StudioPublicationStatus,
   type StudioPublishResult,
+  type StudioRevisionRecord,
 } from "@/features/studio-publication-model";
 
 const ACCESS_COOKIE = "abhidea-studio-access";
+const REVISION_HISTORY_LIMIT = 100;
 
 type UnknownRecord = Record<string, unknown>;
 
@@ -89,6 +92,28 @@ export async function loadStudioPublicationStatus(
   const status = parseStudioPublicationRow(payload[0]);
   if (!status) throw new Error("Studio publication returned an invalid publication payload.");
   return status;
+}
+
+export async function loadStudioRevisionHistory(localizationId: string): Promise<StudioRevisionRecord[]> {
+  const { url } = getSupabaseConfig();
+  const endpoint = new URL(`${url}/rest/v1/content_revisions`);
+  endpoint.searchParams.set(
+    "select",
+    "id,localization_id,revision_number,snapshot_json,reason,created_at",
+  );
+  endpoint.searchParams.set("localization_id", `eq.${localizationId}`);
+  endpoint.searchParams.set("order", "revision_number.desc");
+  endpoint.searchParams.set("limit", String(REVISION_HISTORY_LIMIT));
+
+  const payload = await requestPublicationJson(endpoint);
+  if (!Array.isArray(payload)) throw new Error("Studio revision history returned an invalid row payload.");
+
+  const revisions = payload.map(parseStudioRevisionRow);
+  if (revisions.some((revision) => revision === null)) {
+    throw new Error("Studio revision history contains an unsupported immutable snapshot.");
+  }
+
+  return revisions as StudioRevisionRecord[];
 }
 
 export async function publishStudioDraft(

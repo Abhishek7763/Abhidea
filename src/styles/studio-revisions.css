@@ -1,0 +1,369 @@
+.studio-revision-history,
+.studio-revision-review-hero,
+.studio-revision-compare,
+.studio-revision-baseline,
+.studio-revision-snapshot-summary {
+  display: grid;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.studio-revision-history h2,
+.studio-revision-review-hero h2,
+.studio-revision-compare h2,
+.studio-revision-baseline h2,
+.studio-revision-snapshot-summary h2,
+.studio-revision-diff-grid h2 {
+  margin: 0.35rem 0 0;
+  font-size: clamp(1.15rem, 4vw, 1.55rem);
+  letter-spacing: -0.025em;
+}
+
+.studio-revision-history-heading,
+.studio-revision-section-heading {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.studio-revision-history-heading > div > p:last-child,
+.studio-revision-section-heading > div > p:last-child,
+.studio-revision-review-hero > div > p:last-child,
+.studio-revision-baseline > p:last-child,
+.studio-revision-snapshot-summary > div > p:last-child {
+  max-width: 48rem;
+  margin: 0.5rem 0 0;
+  color: var(--text-secondary);
+  font-size: 0.78rem;
+  line-height: 1.55;
+}
+
+.studio-revision-history-heading > span,
+.studio-revision-section-heading > span {
+  justify-self: start;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface-subtle);
+  padding: 0.35rem 0.55rem;
+  color: var(--text-secondary);
+  font-size: 0.67rem;
+  font-weight: 800;
+}
+
+.studio-revision-section-heading > span[data-changed="true"] {
+  border-color: color-mix(in srgb, var(--warning) 42%, var(--border));
+  color: var(--warning);
+}
+
+.studio-revision-empty,
+.studio-revision-baseline {
+  border: 1px dashed var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--surface-subtle);
+  padding: 0.9rem;
+}
+
+.studio-revision-empty {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.studio-revision-empty strong {
+  font-size: 0.85rem;
+}
+
+.studio-revision-empty p,
+.studio-revision-muted {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 0.74rem;
+  line-height: 1.5;
+}
+
+.studio-revision-list {
+  display: grid;
+  gap: 0.7rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.studio-revision-card {
+  display: grid;
+  gap: 0.45rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--surface-subtle);
+  padding: 0.8rem;
+}
+
+.studio-revision-card[data-live="true"] {
+  border-color: color-mix(in srgb, var(--success) 38%, var(--border));
+  background: color-mix(in srgb, var(--success) 5%, var(--surface-subtle));
+}
+
+.studio-revision-card-topline,
+.studio-revision-card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.65rem;
+}
+
+.studio-revision-card-topline > div {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.45rem;
+}
+
+.studio-revision-card-topline strong {
+  font-size: 0.82rem;
+}
+
+.studio-revision-card-topline > div > span,
+.studio-revision-card small,
+.studio-revision-card time {
+  color: var(--text-secondary);
+  font-size: 0.66rem;
+}
+
+.studio-revision-live-badge {
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--success) 14%, var(--surface));
+  padding: 0.28rem 0.48rem;
+  color: var(--success);
+  font-size: 0.62rem;
+  font-weight: 850;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.studio-revision-card p {
+  margin: 0;
+  font-size: 0.82rem;
+  font-weight: 750;
+  line-height: 1.4;
+}
+
+.studio-revision-card small {
+  overflow-wrap: anywhere;
+}
+
+.studio-revision-card-footer {
+  align-items: flex-end;
+  border-top: 1px solid var(--border);
+  padding-top: 0.5rem;
+}
+
+.studio-revision-card-footer a {
+  min-height: 42px;
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 0.55rem 0.7rem;
+  color: var(--text-primary);
+  font-size: 0.7rem;
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.studio-revision-card-footer a:hover {
+  border-color: color-mix(in srgb, var(--accent) 40%, var(--border));
+}
+
+.studio-revision-review-hero dl,
+.studio-revision-snapshot-summary dl {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.65rem;
+  margin: 0;
+}
+
+.studio-revision-review-hero dl div,
+.studio-revision-snapshot-summary dl div {
+  min-width: 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface-subtle);
+  padding: 0.7rem;
+}
+
+.studio-revision-review-hero dt,
+.studio-revision-snapshot-summary dt {
+  color: var(--text-secondary);
+  font-size: 0.62rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.studio-revision-review-hero dd,
+.studio-revision-snapshot-summary dd {
+  margin: 0.2rem 0 0;
+  overflow-wrap: anywhere;
+  font-size: 0.74rem;
+  font-weight: 750;
+}
+
+.studio-revision-field-grid,
+.studio-revision-diff-grid {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.studio-revision-field {
+  display: grid;
+  gap: 0.45rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--surface-subtle);
+  padding: 0.8rem;
+}
+
+.studio-revision-field[data-changed="true"] {
+  border-color: color-mix(in srgb, var(--warning) 38%, var(--border));
+}
+
+.studio-revision-field > span,
+.studio-revision-field small {
+  color: var(--text-secondary);
+  font-size: 0.62rem;
+  font-weight: 800;
+}
+
+.studio-revision-field > div {
+  display: grid;
+  gap: 0.18rem;
+}
+
+.studio-revision-field p {
+  margin: 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font-size: 0.74rem;
+  line-height: 1.5;
+}
+
+.studio-revision-field strong {
+  justify-self: start;
+  font-size: 0.66rem;
+  color: var(--text-secondary);
+}
+
+.studio-revision-field[data-changed="true"] strong {
+  color: var(--warning);
+}
+
+.studio-revision-diff-grid {
+  margin-bottom: 1rem;
+}
+
+.studio-revision-diff-grid > article {
+  display: grid;
+  gap: 0.75rem;
+  min-width: 0;
+}
+
+.studio-revision-change-groups {
+  display: grid;
+  gap: 0.65rem;
+}
+
+.studio-revision-change-groups > div {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface-subtle);
+  padding: 0.7rem;
+}
+
+.studio-revision-change-groups strong {
+  font-size: 0.7rem;
+}
+
+.studio-revision-change-groups ul {
+  display: grid;
+  gap: 0.3rem;
+  margin: 0.45rem 0 0;
+  padding-left: 1.1rem;
+  font-size: 0.72rem;
+}
+
+.studio-revision-block-stats {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.5rem;
+}
+
+.studio-revision-block-stats span {
+  display: grid;
+  gap: 0.12rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface-subtle);
+  padding: 0.6rem;
+  color: var(--text-secondary);
+  font-size: 0.64rem;
+}
+
+.studio-revision-block-stats strong {
+  color: var(--text-primary);
+  font-size: 0.9rem;
+}
+
+.studio-revision-block-change-list {
+  display: grid;
+  gap: 0.4rem;
+}
+
+.studio-revision-block-change-list span {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 0.5rem 0.6rem;
+  overflow-wrap: anywhere;
+  font-size: 0.68rem;
+  line-height: 1.4;
+}
+
+.studio-revision-block-change-list span[data-kind="added"] {
+  border-color: color-mix(in srgb, var(--success) 38%, var(--border));
+}
+
+.studio-revision-block-change-list span[data-kind="removed"] {
+  border-color: color-mix(in srgb, var(--danger) 38%, var(--border));
+}
+
+.studio-revision-block-change-list span[data-kind="changed"] {
+  border-color: color-mix(in srgb, var(--warning) 38%, var(--border));
+}
+
+@media (min-width: 48rem) {
+  .studio-revision-history-heading,
+  .studio-revision-section-heading,
+  .studio-revision-review-hero,
+  .studio-revision-snapshot-summary {
+    grid-template-columns: minmax(0, 1.25fr) minmax(16rem, 0.75fr);
+    align-items: start;
+  }
+
+  .studio-revision-history-heading > span,
+  .studio-revision-section-heading > span {
+    justify-self: end;
+  }
+
+  .studio-revision-list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .studio-revision-field-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .studio-revision-diff-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .studio-revision-block-stats {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}

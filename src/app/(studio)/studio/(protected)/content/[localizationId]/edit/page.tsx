@@ -13,8 +13,12 @@ import { loadStudioDraftEditor, loadStudioEditionLinks } from "@/features/studio
 import {
   buildStudioPublishPreflight,
   studioPublicationStateLabel,
+  studioRevisionReasonLabel,
 } from "@/features/studio-publication-model";
-import { loadStudioPublicationStatus } from "@/features/studio-publication";
+import {
+  loadStudioPublicationStatus,
+  loadStudioRevisionHistory,
+} from "@/features/studio-publication";
 
 type StudioDraftEditPageProps = Readonly<{
   params: Promise<{ localizationId: string }>;
@@ -39,9 +43,10 @@ export default async function StudioDraftEditPage({ params, searchParams }: Stud
   const { localizationId } = await params;
   if (!isStudioUuid(localizationId)) notFound();
 
-  const [draft, publication] = await Promise.all([
+  const [draft, publication, revisions] = await Promise.all([
     loadStudioDraftEditor(localizationId),
     loadStudioPublicationStatus(localizationId),
+    loadStudioRevisionHistory(localizationId),
   ]);
   if (!draft) notFound();
 
@@ -128,6 +133,51 @@ export default async function StudioDraftEditPage({ params, searchParams }: Stud
             <p>No public snapshot exists for this language edition yet.</p>
           )}
         </div>
+      </section>
+
+      <section className="studio-panel studio-revision-history" aria-labelledby="revision-history-heading">
+        <div className="studio-revision-history-heading">
+          <div>
+            <p className="studio-kicker">Revision history</p>
+            <h2 id="revision-history-heading">Published snapshots stay immutable</h2>
+            <p>
+              Every successful publish creates a numbered snapshot. Review an older revision without changing the working draft or current live version.
+            </p>
+          </div>
+          <span>{revisions.length === 0 ? "No revisions yet" : `${revisions.length} saved revision${revisions.length === 1 ? "" : "s"}`}</span>
+        </div>
+
+        {revisions.length === 0 ? (
+          <div className="studio-revision-empty">
+            <strong>History starts with the first publish.</strong>
+            <p>Save this draft as Ready and publish it to create Revision 1.</p>
+          </div>
+        ) : (
+          <ol className="studio-revision-list">
+            {revisions.map((revision) => {
+              const isLive = publication?.revisionId === revision.id;
+              return (
+                <li key={revision.id} className="studio-revision-card" data-live={isLive ? "true" : "false"}>
+                  <div className="studio-revision-card-topline">
+                    <div>
+                      <strong>Revision {revision.revisionNumber}</strong>
+                      <span>{studioRevisionReasonLabel(revision.reason)}</span>
+                    </div>
+                    {isLive ? <span className="studio-revision-live-badge">Live</span> : null}
+                  </div>
+                  <p>{revision.snapshot.title}</p>
+                  <small>{revision.snapshot.slug}</small>
+                  <div className="studio-revision-card-footer">
+                    <time dateTime={revision.createdAt}>{formatUpdatedAt(revision.createdAt)}</time>
+                    <Link href={`/studio/content/${draft.localizationId}/revisions/${revision.id}`}>
+                      Review revision
+                    </Link>
+                  </div>
+                </li>
+              );
+            })}
+          </ol>
+        )}
       </section>
 
       <section className="studio-panel studio-publish-preflight" aria-labelledby="publish-preflight-heading">

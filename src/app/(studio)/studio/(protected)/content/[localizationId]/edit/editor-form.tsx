@@ -50,6 +50,7 @@ function FieldError({ message }: Readonly<{ message?: string }>) {
 export function StudioEditorForm({ localizationId, lockVersion, title, slug, summary, status, document }: StudioEditorFormProps) {
   const [state, formAction, isPending] = useActionState(updateStudioDraftAction, INITIAL_STATE);
   const [blocks, setBlocks] = useState<StudioEditableBlock[]>(() => cloneBlocks(document));
+  const [editorialStatus, setEditorialStatus] = useState<StudioEditorialStatus>(status);
   const idCounter = useRef(0);
 
   function replaceBlock(id: string, update: (block: StudioEditableBlock) => StudioEditableBlock) {
@@ -81,6 +82,8 @@ export function StudioEditorForm({ localizationId, lockVersion, title, slug, sum
     });
   }
 
+  const savingReady = editorialStatus === "ready";
+
   return (
     <form className="studio-editor-form" action={formAction}>
       <input type="hidden" name="localizationId" value={localizationId} />
@@ -97,19 +100,43 @@ export function StudioEditorForm({ localizationId, lockVersion, title, slug, sum
         <div>
           <p className="studio-kicker">Draft details</p>
           <h2 id="editor-details-heading">Identity for this edition</h2>
-          <p>Save the editorial state as Ready only when this saved draft is ready to pass publish preflight.</p>
+          <p>When the content is complete, mark it Ready and save. That saved Ready state unlocks the separate Publish action above.</p>
         </div>
 
         <div className="studio-draft-fields">
           <label>
             <span>Editorial state</span>
-            <select name="editorialStatus" defaultValue={status}>
-              <option value="draft">Draft</option>
+            <select
+              name="editorialStatus"
+              value={editorialStatus}
+              onChange={(event) => {
+                const value = event.target.value;
+                setEditorialStatus(value === "ready" ? "ready" : value === "needs_review" ? "needs_review" : "draft");
+              }}
+            >
+              <option value="draft">Draft — private work</option>
               <option value="needs_review">Needs review</option>
-              <option value="ready">Ready</option>
+              <option value="ready">Ready — unlock Publish after save</option>
             </select>
             <FieldError message={state.fieldErrors.editorialStatus} />
           </label>
+
+          <div className="studio-ready-shortcut" data-ready={savingReady ? "true" : "false"}>
+            <div>
+              <strong>{savingReady ? "Ready selected" : "Still a private draft"}</strong>
+              <p>
+                {savingReady
+                  ? "Save now. After reload, Publish will be unlocked if the saved content passes preflight."
+                  : "When writing is complete, choose Ready. Nothing goes live until you separately press Publish."}
+              </p>
+            </div>
+            {!savingReady ? (
+              <button type="button" onClick={() => setEditorialStatus("ready")}>
+                Mark Ready
+              </button>
+            ) : null}
+          </div>
+
           <label>
             <span>Title</span>
             <input name="title" type="text" defaultValue={title} maxLength={180} required />
@@ -212,9 +239,21 @@ export function StudioEditorForm({ localizationId, lockVersion, title, slug, sum
         <FieldError message={state.fieldErrors.documentJson} />
       </section>
 
-      <div className="studio-draft-savebar">
-        <div><strong>Explicit private save</strong><span>Lock version {lockVersion}. Saving remains private; Publish is a separate explicit action after reload.</span></div>
-        <div className="studio-draft-save-actions"><Link href="/studio/content">Back</Link><button type="submit" disabled={isPending}>{isPending ? "Saving…" : "Save draft"}</button></div>
+      <div className="studio-draft-savebar" data-ready={savingReady ? "true" : "false"}>
+        <div>
+          <strong>{savingReady ? "Save readiness for publishing" : "Save private draft"}</strong>
+          <span>
+            {savingReady
+              ? "After this save, the page reloads and Publish unlocks if preflight passes."
+              : `Lock version ${lockVersion}. Saving remains private and does not change the live Reader.`}
+          </span>
+        </div>
+        <div className="studio-draft-save-actions">
+          <Link href="/studio/content">Back</Link>
+          <button type="submit" disabled={isPending}>
+            {isPending ? "Saving…" : savingReady ? "Save as Ready" : "Save draft"}
+          </button>
+        </div>
       </div>
     </form>
   );

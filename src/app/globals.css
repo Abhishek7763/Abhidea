@@ -15,6 +15,7 @@
 @import "../styles/studio-preview.css";
 @import "../styles/studio-publication.css";
 @import "../styles/studio-revisions.css";
+@import "../styles/studio-publish-workflow.css";
 
 @theme inline {
   --color-background: var(--background);

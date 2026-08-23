@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import { StudioArchiveForm } from "@/app/(studio)/studio/(protected)/content/[localizationId]/edit/archive-form";
 import { StudioEditorForm } from "@/app/(studio)/studio/(protected)/content/[localizationId]/edit/editor-form";
 import { StudioPublishForm } from "@/app/(studio)/studio/(protected)/content/[localizationId]/edit/publish-form";
 import {
@@ -58,8 +59,9 @@ export default async function StudioDraftEditPage({ params, searchParams }: Stud
   const saved = firstSearchValue(resolvedSearchParams.saved) === "1";
   const linked = firstSearchValue(resolvedSearchParams.linked) === "1";
   const published = firstSearchValue(resolvedSearchParams.published) === "1";
+  const archived = firstSearchValue(resolvedSearchParams.archived) === "1";
   const liveHref = publication?.state === "published" ? `/${draft.locale}/read/${publication.slug}` : null;
-  const workflowStage = published ? "published" : preflight.ready ? "ready" : "editing";
+  const workflowStage = archived || publication?.state === "archived" ? "archived" : published ? "published" : preflight.ready ? "ready" : "editing";
 
   return (
     <main>
@@ -83,17 +85,18 @@ export default async function StudioDraftEditPage({ params, searchParams }: Stud
         </div>
       </header>
 
-      {published ? (
+      {archived ? (
+        <div className="studio-content-notice" role="status">
+          <strong>Publication archived.</strong>
+          <span>The public Reader is offline. Immutable revisions and the private working draft are preserved.</span>
+        </div>
+      ) : published ? (
         <div className="studio-content-notice studio-publish-success-notice" role="status">
           <div>
             <strong>Published successfully.</strong>
             <span>An immutable revision now owns the live snapshot. The working draft has safely returned to Draft.</span>
           </div>
-          {liveHref ? (
-            <Link href={liveHref} target="_blank">
-              View live Reader
-            </Link>
-          ) : null}
+          {liveHref ? <Link href={liveHref} target="_blank">View live Reader</Link> : null}
         </div>
       ) : linked ? (
         <div className="studio-content-notice" role="status">
@@ -130,38 +133,36 @@ export default async function StudioDraftEditPage({ params, searchParams }: Stud
           <div>
             <p className="studio-kicker">Publish workflow</p>
             <h2 id="publish-workflow-heading">
-              {published ? "Published — open the live Reader" : preflight.ready ? "Ready to publish" : "Finish the draft, then mark it Ready"}
+              {publication?.state === "archived"
+                ? "Archived — public Reader is offline"
+                : published
+                  ? "Published — open the live Reader"
+                  : preflight.ready
+                    ? "Ready to publish"
+                    : "Finish the draft, then mark it Ready"}
             </h2>
-            <p>
-              Publishing is deliberately separate from saving. Your content stays private until the saved Ready draft passes preflight and you press Publish.
-            </p>
+            <p>Publishing is deliberately separate from saving. Archiving removes public access without deleting the draft or immutable revisions.</p>
           </div>
-          <span>{published ? "Live" : preflight.ready ? "Ready" : studioEditorialStatusLabel(draft.status)}</span>
+          <span>{publication?.state === "archived" ? "Archived" : published ? "Live" : preflight.ready ? "Ready" : studioEditorialStatusLabel(draft.status)}</span>
         </div>
 
         <ol className="studio-publish-steps" aria-label="Publish steps">
           <li data-state="complete"><span>1</span><div><strong>Draft</strong><small>Write and save privately</small></div></li>
           <li data-state={draft.status === "ready" || preflight.ready || published ? "complete" : "current"}><span>2</span><div><strong>Mark Ready</strong><small>Choose Ready in Draft details</small></div></li>
           <li data-state={preflight.ready || published ? "complete" : draft.status === "ready" ? "current" : "upcoming"}><span>3</span><div><strong>Save Ready</strong><small>Reload with stored readiness</small></div></li>
-          <li data-state={published ? "complete" : preflight.ready ? "current" : "upcoming"}><span>4</span><div><strong>Publish</strong><small>Create revision + live snapshot</small></div></li>
-          <li data-state={published || liveHref ? "complete" : "upcoming"}><span>5</span><div><strong>View live</strong><small>Open the public Reader</small></div></li>
+          <li data-state={publication?.state === "archived" ? "upcoming" : published ? "complete" : preflight.ready ? "current" : "upcoming"}><span>4</span><div><strong>Publish</strong><small>Create revision + live snapshot</small></div></li>
+          <li data-state={liveHref ? "complete" : "upcoming"}><span>5</span><div><strong>View live</strong><small>{publication?.state === "archived" ? "Offline until republished" : "Open the public Reader"}</small></div></li>
         </ol>
 
         <div className="studio-publish-workflow-action">
-          {published && liveHref ? (
+          {liveHref ? (
             <Link href={liveHref} target="_blank">View live Reader</Link>
           ) : preflight.ready ? (
-            <a href="#publish-preflight-heading">Continue to Publish</a>
+            <a href="#publish-preflight-heading">{publication?.state === "archived" ? "Republish archived edition" : "Continue to Publish"}</a>
           ) : (
-            <a href="#editor-details-heading">Mark Ready &amp; Save</a>
+            <a href="#editor-details-heading">{publication?.state === "archived" ? "Prepare to republish" : "Mark Ready & Save"}</a>
           )}
-          <span>
-            {published
-              ? `Live revision ${publication?.revisionNumber ?? ""} is active.`
-              : preflight.ready
-                ? "The saved draft is ready. Unsaved editor changes are not included."
-                : "Saving a normal Draft never publishes it."}
-          </span>
+          <span>{publication?.state === "archived" ? "The last revision is preserved. Save a Ready draft and Publish to restore public access." : preflight.ready ? "The saved draft is ready. Unsaved editor changes are not included." : "Saving a normal Draft never publishes it."}</span>
         </div>
       </section>
 
@@ -169,23 +170,19 @@ export default async function StudioDraftEditPage({ params, searchParams }: Stud
         <div>
           <p className="studio-kicker">Publish preflight</p>
           <h2 id="publish-preflight-heading">{preflight.ready ? "Saved draft is ready to publish" : "Publish is still locked"}</h2>
-          <p>
-            The database re-checks membership, lock version, Reader body shape and live slug uniqueness before any revision is committed.
-          </p>
+          <p>The database re-checks membership, lock version, Reader body shape and live slug uniqueness before any revision is committed.</p>
         </div>
 
         {preflight.ready ? (
           <div className="studio-publish-ready">
-            <strong>All local blockers are cleared.</strong>
-            <p>Press Publish below to create the immutable revision and live snapshot. Unsaved editor changes are never included.</p>
+            <strong>{publication?.state === "archived" ? "Ready to restore public access." : "All local blockers are cleared."}</strong>
+            <p>Press Publish below to create a new immutable revision and live snapshot. Unsaved editor changes are never included.</p>
             <StudioPublishForm localizationId={draft.localizationId} lockVersion={draft.lockVersion} />
           </div>
         ) : (
           <div className="studio-publish-blocked">
             <strong>Publish blocked</strong>
-            <ul>
-              {preflight.blockers.map((blocker) => <li key={blocker}>{blocker}</li>)}
-            </ul>
+            <ul>{preflight.blockers.map((blocker) => <li key={blocker}>{blocker}</li>)}</ul>
             <a className="studio-publish-fix-link" href="#editor-details-heading">Fix in Draft details</a>
             <p>Choose Ready, complete any missing content, then press Save as Ready. Publish unlocks after the page reloads.</p>
           </div>
@@ -196,9 +193,7 @@ export default async function StudioDraftEditPage({ params, searchParams }: Stud
         <div>
           <p className="studio-kicker">Publication safety</p>
           <h2 id="publication-safety-heading">Draft and live stay separate</h2>
-          <p>
-            Saving updates only the private working draft. Publishing creates an immutable revision first, then replaces the live snapshot in the same database transaction.
-          </p>
+          <p>Saving updates only the private working draft. Publishing creates an immutable revision first. Archiving only changes public visibility.</p>
         </div>
 
         <div className="studio-publication-status" data-state={publication?.state ?? "never-published"}>
@@ -206,18 +201,14 @@ export default async function StudioDraftEditPage({ params, searchParams }: Stud
           <strong>{publication ? studioPublicationStateLabel(publication.state) : "Never published"}</strong>
           {publication ? (
             <>
-              <p>Revision {publication.revisionNumber} owns the current saved live snapshot.</p>
+              <p>{publication.state === "published" ? `Revision ${publication.revisionNumber} owns the current live snapshot.` : `Revision ${publication.revisionNumber} is preserved, but this edition is not publicly readable.`}</p>
               <dl>
-                <div>
-                  <dt>Live slug</dt>
-                  <dd>{publication.slug}</dd>
-                </div>
-                <div>
-                  <dt>First published</dt>
-                  <dd>{formatUpdatedAt(publication.publishedAt)}</dd>
-                </div>
+                <div><dt>Reserved slug</dt><dd>{publication.slug}</dd></div>
+                <div><dt>First published</dt><dd>{formatUpdatedAt(publication.publishedAt)}</dd></div>
+                <div><dt>State updated</dt><dd>{formatUpdatedAt(publication.updatedAt)}</dd></div>
               </dl>
               {liveHref ? <Link className="studio-publication-live-link" href={liveHref} target="_blank">Open live Reader</Link> : null}
+              {publication.state === "published" ? <StudioArchiveForm localizationId={draft.localizationId} revisionId={publication.revisionId} /> : <p>To restore this page, mark the working draft Ready, save it, then Publish again.</p>}
             </>
           ) : (
             <p>No public snapshot exists for this language edition yet.</p>
@@ -230,38 +221,29 @@ export default async function StudioDraftEditPage({ params, searchParams }: Stud
           <div>
             <p className="studio-kicker">Revision history</p>
             <h2 id="revision-history-heading">Published snapshots stay immutable</h2>
-            <p>
-              Every successful publish creates a numbered snapshot. Review an older revision without changing the working draft or current live version.
-            </p>
+            <p>Every successful publish creates a numbered snapshot. Archive never deletes these revisions.</p>
           </div>
           <span>{revisions.length === 0 ? "No revisions yet" : `${revisions.length} saved revision${revisions.length === 1 ? "" : "s"}`}</span>
         </div>
 
         {revisions.length === 0 ? (
-          <div className="studio-revision-empty">
-            <strong>History starts with the first publish.</strong>
-            <p>Save this draft as Ready and publish it to create Revision 1.</p>
-          </div>
+          <div className="studio-revision-empty"><strong>History starts with the first publish.</strong><p>Save this draft as Ready and publish it to create Revision 1.</p></div>
         ) : (
           <ol className="studio-revision-list">
             {revisions.map((revision) => {
-              const isLive = publication?.revisionId === revision.id;
+              const isLive = publication?.state === "published" && publication.revisionId === revision.id;
+              const isArchivedSource = publication?.state === "archived" && publication.revisionId === revision.id;
               return (
                 <li key={revision.id} className="studio-revision-card" data-live={isLive ? "true" : "false"}>
                   <div className="studio-revision-card-topline">
-                    <div>
-                      <strong>Revision {revision.revisionNumber}</strong>
-                      <span>{studioRevisionReasonLabel(revision.reason)}</span>
-                    </div>
-                    {isLive ? <span className="studio-revision-live-badge">Live</span> : null}
+                    <div><strong>Revision {revision.revisionNumber}</strong><span>{studioRevisionReasonLabel(revision.reason)}</span></div>
+                    {isLive ? <span className="studio-revision-live-badge">Live</span> : isArchivedSource ? <span className="studio-revision-live-badge">Archived</span> : null}
                   </div>
                   <p>{revision.snapshot.title}</p>
                   <small>{revision.snapshot.slug}</small>
                   <div className="studio-revision-card-footer">
                     <time dateTime={revision.createdAt}>{formatUpdatedAt(revision.createdAt)}</time>
-                    <Link href={`/studio/content/${draft.localizationId}/revisions/${revision.id}`}>
-                      Review revision
-                    </Link>
+                    <Link href={`/studio/content/${draft.localizationId}/revisions/${revision.id}`}>Review revision</Link>
                   </div>
                 </li>
               );
@@ -276,36 +258,19 @@ export default async function StudioDraftEditPage({ params, searchParams }: Stud
           <h2 id="bilingual-editions-heading">English and Hindi stay linked, not duplicated</h2>
           <p>Content Type and Subjects are shared at the logical-content level. Each language keeps its own title, slug, summary, body and editorial state.</p>
         </div>
-
         <div className="studio-draft-fields">
           <div className="studio-content-card-meta" aria-label="Edition availability">
             <span>{studioLocaleLabel(draft.locale)} — current</span>
             <span>{studioLocaleLabel(counterpartLocale)} — {counterpart ? "available" : "not created"}</span>
           </div>
           <div className="studio-content-filter-actions">
-            {counterpart ? (
-              <Link className="studio-content-secondary-link" href={`/studio/content/${counterpart.localizationId}/edit`}>
-                Open {studioLocaleLabel(counterpartLocale)} edition
-              </Link>
-            ) : (
-              <Link className="studio-content-primary-link" href={`/studio/content/${draft.localizationId}/new-edition`}>
-                Add {studioLocaleLabel(counterpartLocale)} edition
-              </Link>
-            )}
+            {counterpart ? <Link className="studio-content-secondary-link" href={`/studio/content/${counterpart.localizationId}/edit`}>Open {studioLocaleLabel(counterpartLocale)} edition</Link> : <Link className="studio-content-primary-link" href={`/studio/content/${draft.localizationId}/new-edition`}>Add {studioLocaleLabel(counterpartLocale)} edition</Link>}
           </div>
         </div>
       </section>
 
       {draft.document.ok ? (
-        <StudioEditorForm
-          localizationId={draft.localizationId}
-          lockVersion={draft.lockVersion}
-          title={draft.title}
-          slug={draft.slug}
-          summary={draft.summary}
-          status={draft.status}
-          document={draft.document.document}
-        />
+        <StudioEditorForm localizationId={draft.localizationId} lockVersion={draft.lockVersion} title={draft.title} slug={draft.slug} summary={draft.summary} status={draft.status} document={draft.document.document} />
       ) : (
         <section className="studio-panel studio-content-error">
           <p className="studio-kicker">Safe editing blocked</p>

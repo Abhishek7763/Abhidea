@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { StudioArchiveForm } from "@/app/(studio)/studio/(protected)/content/[localizationId]/edit/archive-form";
 import { StudioEditorForm } from "@/app/(studio)/studio/(protected)/content/[localizationId]/edit/editor-form";
 import { StudioPublishForm } from "@/app/(studio)/studio/(protected)/content/[localizationId]/edit/publish-form";
+import { StudioTrashForm } from "@/app/(studio)/studio/(protected)/content/[localizationId]/edit/trash-form";
 import {
   isStudioUuid,
   otherStudioContentLocale,
@@ -221,7 +222,7 @@ export default async function StudioDraftEditPage({ params, searchParams }: Stud
           <div>
             <p className="studio-kicker">Revision history</p>
             <h2 id="revision-history-heading">Published snapshots stay immutable</h2>
-            <p>Every successful publish creates a numbered snapshot. Archive never deletes these revisions.</p>
+            <p>Every successful publish creates a numbered snapshot. Archive and Trash never delete these revisions.</p>
           </div>
           <span>{revisions.length === 0 ? "No revisions yet" : `${revisions.length} saved revision${revisions.length === 1 ? "" : "s"}`}</span>
         </div>
@@ -261,10 +262,18 @@ export default async function StudioDraftEditPage({ params, searchParams }: Stud
         <div className="studio-draft-fields">
           <div className="studio-content-card-meta" aria-label="Edition availability">
             <span>{studioLocaleLabel(draft.locale)} — current</span>
-            <span>{studioLocaleLabel(counterpartLocale)} — {counterpart ? "available" : "not created"}</span>
+            <span>
+              {studioLocaleLabel(counterpartLocale)} — {counterpart ? (counterpart.lifecycleState === "active" ? "available" : "in Trash") : "not created"}
+            </span>
           </div>
           <div className="studio-content-filter-actions">
-            {counterpart ? <Link className="studio-content-secondary-link" href={`/studio/content/${counterpart.localizationId}/edit`}>Open {studioLocaleLabel(counterpartLocale)} edition</Link> : <Link className="studio-content-primary-link" href={`/studio/content/${draft.localizationId}/new-edition`}>Add {studioLocaleLabel(counterpartLocale)} edition</Link>}
+            {counterpart?.lifecycleState === "active" ? (
+              <Link className="studio-content-secondary-link" href={`/studio/content/${counterpart.localizationId}/edit`}>Open {studioLocaleLabel(counterpartLocale)} edition</Link>
+            ) : counterpart?.lifecycleState === "trashed" ? (
+              <Link className="studio-content-secondary-link" href="/studio/content/trash">Restore {studioLocaleLabel(counterpartLocale)} from Trash</Link>
+            ) : (
+              <Link className="studio-content-primary-link" href={`/studio/content/${draft.localizationId}/new-edition`}>Add {studioLocaleLabel(counterpartLocale)} edition</Link>
+            )}
           </div>
         </div>
       </section>
@@ -280,6 +289,22 @@ export default async function StudioDraftEditPage({ params, searchParams }: Stud
           <Link className="studio-content-secondary-link" href="/studio/content">Return to content</Link>
         </section>
       )}
+
+      <section className="studio-panel studio-content-error" aria-labelledby="trash-edition-heading">
+        <div>
+          <p className="studio-kicker">Lifecycle safety</p>
+          <h2 id="trash-edition-heading">Move this language edition to Trash</h2>
+          <p>
+            Trash is reversible. This edition leaves the active Studio library and becomes read-only until restored. If it is currently public, the same transaction archives the Reader page first.
+          </p>
+        </div>
+        <StudioTrashForm
+          localizationId={draft.localizationId}
+          lockVersion={draft.lockVersion}
+          expectedLiveRevisionId={publication?.revisionId ?? null}
+          isPublished={publication?.state === "published"}
+        />
+      </section>
     </main>
   );
 }

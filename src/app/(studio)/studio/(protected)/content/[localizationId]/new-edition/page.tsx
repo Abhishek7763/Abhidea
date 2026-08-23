@@ -24,8 +24,12 @@ export default async function StudioNewEditionPage({ params }: StudioNewEditionP
   const editions = await loadStudioEditionLinks(sourceDraft.contentId);
   const existingTarget = editions.find((edition) => edition.locale === targetLocale);
 
-  if (existingTarget) {
+  if (existingTarget?.lifecycleState === "active") {
     redirect(`/studio/content/${existingTarget.localizationId}/edit`);
+  }
+
+  if (existingTarget?.lifecycleState === "trashed") {
+    redirect("/studio/content/trash");
   }
 
   return (

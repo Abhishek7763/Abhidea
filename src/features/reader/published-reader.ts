@@ -20,6 +20,11 @@ type PublishedReaderRow = Readonly<{
   subjects: string[];
 }>;
 
+export type PublishedReaderVerification = Readonly<{
+  locale: ReaderLocale;
+  slug: string;
+}>;
+
 function isRecord(value: unknown): value is UnknownRecord {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
@@ -130,6 +135,34 @@ function estimateMinutes(blocks: readonly ReaderBlock[]): number {
     .split(/\s+/u)
     .filter(Boolean).length;
   return Math.max(1, Math.ceil(words / 190));
+}
+
+export async function verifyPublishedReaderSnapshot(
+  localizationId: string,
+  expectedRevisionId: string,
+): Promise<PublishedReaderVerification | null> {
+  try {
+    const { url } = getSupabaseConfig();
+    const endpoint = new URL(`${url}/rest/v1/published_localizations`);
+    endpoint.searchParams.set(
+      "select",
+      "localization_id,revision_id,content_id,locale,slug,title,summary,body_json,subjects_json,content_type_name",
+    );
+    endpoint.searchParams.set("publication_state", "eq.published");
+    endpoint.searchParams.set("localization_id", `eq.${localizationId}`);
+    endpoint.searchParams.set("revision_id", `eq.${expectedRevisionId}`);
+    endpoint.searchParams.set("limit", "1");
+
+    const rows = await requestRows(endpoint);
+    if (rows.length !== 1 || !isRecord(rows[0])) return null;
+    if (rows[0].localization_id !== localizationId || rows[0].revision_id !== expectedRevisionId) return null;
+
+    const row = parsePublishedReaderRow(rows[0]);
+    if (!row) return null;
+    return { locale: row.locale, slug: row.slug };
+  } catch {
+    return null;
+  }
 }
 
 async function loadPublishedReaderEntry(locale: ReaderLocale, slug: string): Promise<ReaderEntry | null> {

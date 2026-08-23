@@ -7,7 +7,7 @@ import {
 const MAX_EDITOR_JSON_CHARS = 250_000;
 const MAX_EDITOR_BLOCKS = 300;
 
-export type StudioEditableBlock = Exclude<ReaderBlock, { type: "figure" }>;
+export type StudioEditableBlock = ReaderBlock;
 export type StudioEditorBlockType = StudioEditableBlock["type"];
 
 export type StudioEditableDocument = Readonly<{
@@ -31,13 +31,10 @@ export const STUDIO_EDITOR_BLOCK_TYPES: readonly StudioEditorBlockType[] = [
   "quote",
   "list",
   "callout",
+  "figure",
   "divider",
   "closure",
 ];
-
-function isStudioEditableBlock(block: ReaderBlock): block is StudioEditableBlock {
-  return block.type !== "figure";
-}
 
 export function parseStudioEditorDocument(input: unknown): StudioEditorDocumentParseResult {
   const parsed = parseReaderDocument(input);
@@ -55,13 +52,6 @@ export function parseStudioEditorDocument(input: unknown): StudioEditorDocumentP
 
   if (parsed.document.blocks.length > MAX_EDITOR_BLOCKS) {
     return { ok: false, message: `This draft exceeds the ${MAX_EDITOR_BLOCKS}-block editor limit.` };
-  }
-
-  if (!parsed.document.blocks.every(isStudioEditableBlock)) {
-    return {
-      ok: false,
-      message: "This draft contains Figure blocks. Phase 10D preserves them but does not edit media blocks yet.",
-    };
   }
 
   return {
@@ -103,6 +93,8 @@ export function createStudioEditorBlock(
       return { id, type, style: "unordered", items: [""] };
     case "callout":
       return { id, type, tone: "note", text: "" };
+    case "figure":
+      return { id, type, mediaId: "", alt: "" };
     case "divider":
       return { id, type };
     case "closure":

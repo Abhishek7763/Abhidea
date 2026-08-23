@@ -5,9 +5,11 @@ import { isStudioUuid } from "@/features/studio-content-model";
 import { loadStudioMediaDetail } from "@/features/studio-media";
 
 import { MediaMetadataForm } from "./media-metadata-form";
+import { MediaOptimizationPanel } from "./media-optimization-panel";
 
 type StudioMediaDetailPageProps = Readonly<{
   params: Promise<{ mediaId: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }>;
 
 function formatBytes(value: number): string {
@@ -22,10 +24,17 @@ function formatDate(value: string): string {
   return new Intl.DateTimeFormat("en-IN", { dateStyle: "medium", timeStyle: "short" }).format(date);
 }
 
-export default async function StudioMediaDetailPage({ params }: StudioMediaDetailPageProps) {
+function firstSearchValue(value: string | string[] | undefined): string | undefined {
+  return Array.isArray(value) ? value[0] : value;
+}
+
+export default async function StudioMediaDetailPage({ params, searchParams }: StudioMediaDetailPageProps) {
   const { mediaId } = await params;
   if (!isStudioUuid(mediaId)) notFound();
 
+  const query = await searchParams;
+  const optimized = firstSearchValue(query.optimized) === "1";
+  const optimizationPending = firstSearchValue(query.optimization) === "pending";
   const detail = await loadStudioMediaDetail(mediaId);
   if (!detail) notFound();
 
@@ -41,6 +50,18 @@ export default async function StudioMediaDetailPage({ params }: StudioMediaDetai
         <Link className="studio-content-secondary-link" href="/studio/media">Back to Media</Link>
       </header>
 
+      {optimized ? (
+        <div className="studio-content-notice" role="status">
+          <strong>Web optimization complete.</strong>
+          <span>The private WebP copy and dimensions are saved. Nothing was moved to the public bucket.</span>
+        </div>
+      ) : optimizationPending ? (
+        <div className="studio-content-notice" role="status">
+          <strong>Original saved safely.</strong>
+          <span>Web optimization did not finish. Retry below; the private original is unchanged.</span>
+        </div>
+      ) : null}
+
       <section className="studio-media-detail-layout">
         <div className="studio-panel studio-media-detail-preview">
           <div className="studio-media-detail-image">
@@ -54,10 +75,12 @@ export default async function StudioMediaDetailPage({ params }: StudioMediaDetai
 
           <div className="studio-media-detail-facts">
             <div><span>Filename</span><strong>{asset.originalFilename}</strong></div>
-            <div><span>Format</span><strong>{asset.mimeType}</strong></div>
-            <div><span>Size</span><strong>{formatBytes(asset.byteSize)}</strong></div>
-            <div><span>State</span><strong>{asset.assetState}</strong></div>
-            <div><span>Dimensions</span><strong>{asset.width && asset.height ? `${asset.width} × ${asset.height}` : "Captured during optimization later"}</strong></div>
+            <div><span>Original format</span><strong>{asset.mimeType}</strong></div>
+            <div><span>Original size</span><strong>{formatBytes(asset.byteSize)}</strong></div>
+            <div><span>Web variant</span><strong>{asset.optimizedStorageKey ? "Private WebP ready" : "Not optimized yet"}</strong></div>
+            <div><span>Optimized size</span><strong>{asset.optimizedByteSize ? formatBytes(asset.optimizedByteSize) : "—"}</strong></div>
+            <div><span>Dimensions</span><strong>{asset.width && asset.height ? `${asset.width} × ${asset.height}` : "Pending optimization"}</strong></div>
+            <div><span>Public state</span><strong>{asset.publicStorageKey ? "Public variant available" : "Private only"}</strong></div>
             <div><span>Created</span><strong>{formatDate(asset.createdAt)}</strong></div>
           </div>
         </div>
@@ -76,6 +99,12 @@ export default async function StudioMediaDetailPage({ params }: StudioMediaDetai
         </div>
       </section>
 
+      {!asset.optimizedStorageKey && asset.previewUrl ? (
+        <section className="studio-panel studio-media-optimization-wrap" aria-label="Web optimization">
+          <MediaOptimizationPanel mediaId={asset.id} previewUrl={asset.previewUrl} />
+        </section>
+      ) : null}
+
       <section className="studio-panel studio-media-usages" aria-labelledby="where-used-heading">
         <div className="studio-media-section-heading">
           <div>
@@ -86,7 +115,7 @@ export default async function StudioMediaDetailPage({ params }: StudioMediaDetai
         </div>
 
         {usages.length === 0 ? (
-          <p>This asset is not linked to content yet. Content-side media selection follows after the upload library is stable.</p>
+          <p>This asset is not linked to content yet. Content-side media selection follows after private optimization is stable.</p>
         ) : (
           <div className="studio-media-usage-list">
             {usages.map((usage) => (

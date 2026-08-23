@@ -15,6 +15,8 @@ import {
   type StudioEditorBlockType,
 } from "@/features/studio-editor-model";
 
+import { FigureMediaPicker } from "./figure-media-picker";
+
 const INITIAL_STATE: StudioDraftUpdateState = { status: "idle", message: "", fieldErrors: {} };
 
 const BLOCK_LABELS: Record<StudioEditorBlockType, string> = {
@@ -23,6 +25,7 @@ const BLOCK_LABELS: Record<StudioEditorBlockType, string> = {
   quote: "Quote",
   list: "List",
   callout: "Callout",
+  figure: "Figure",
   divider: "Divider",
   closure: "Closure",
 };
@@ -83,6 +86,8 @@ export function StudioEditorForm({ localizationId, lockVersion, title, slug, sum
   }
 
   const savingReady = editorialStatus === "ready";
+  const hasFigureBlocks = blocks.some((block) => block.type === "figure");
+  const readyBlockedByPrivateMedia = savingReady && hasFigureBlocks;
 
   return (
     <form className="studio-editor-form" action={formAction}>
@@ -123,11 +128,15 @@ export function StudioEditorForm({ localizationId, lockVersion, title, slug, sum
 
           <div className="studio-ready-shortcut" data-ready={savingReady ? "true" : "false"}>
             <div>
-              <strong>{savingReady ? "Ready selected" : "Still a private draft"}</strong>
+              <strong>
+                {readyBlockedByPrivateMedia ? "Figure media is still private" : savingReady ? "Ready selected" : "Still a private draft"}
+              </strong>
               <p>
-                {savingReady
-                  ? "Save now. After reload, Publish will be unlocked if the saved content passes preflight."
-                  : "When writing is complete, choose Ready. Nothing goes live until you separately press Publish."}
+                {readyBlockedByPrivateMedia
+                  ? "Save this edition as Draft or Needs review for now. Figure publishing unlocks after the public media promotion checkpoint."
+                  : savingReady
+                    ? "Save now. After reload, Publish will be unlocked if the saved content passes preflight."
+                    : "When writing is complete, choose Ready. Nothing goes live until you separately press Publish."}
               </p>
             </div>
             {!savingReady ? (
@@ -174,7 +183,7 @@ export function StudioEditorForm({ localizationId, lockVersion, title, slug, sum
         </div>
 
         {blocks.length === 0 ? (
-          <div className="studio-panel studio-draft-inline-empty">This draft has no body blocks yet. Add a Paragraph, Heading, List or another supported block above.</div>
+          <div className="studio-panel studio-draft-inline-empty">This draft has no body blocks yet. Add a Paragraph, Heading, Figure, List or another supported block above.</div>
         ) : (
           <div className="studio-editor-blocks">
             {blocks.map((block, index) => (
@@ -221,6 +230,13 @@ export function StudioEditorForm({ localizationId, lockVersion, title, slug, sum
                   </div>
                 ) : null}
 
+                {block.type === "figure" ? (
+                  <FigureMediaPicker
+                    block={block}
+                    onChange={(next) => replaceBlock(block.id, (current) => current.type === "figure" ? next : current)}
+                  />
+                ) : null}
+
                 {block.type === "divider" ? <p className="studio-editor-divider-note">Reader divider — no text content.</p> : null}
 
                 {block.type === "closure" ? (
@@ -239,19 +255,27 @@ export function StudioEditorForm({ localizationId, lockVersion, title, slug, sum
         <FieldError message={state.fieldErrors.documentJson} />
       </section>
 
+      {readyBlockedByPrivateMedia ? (
+        <div className="studio-draft-form-error" data-kind="error" role="status">
+          Figure blocks are saved privately in Phase 12D. Choose Draft or Needs review before saving; public Figure promotion is the next checkpoint.
+        </div>
+      ) : null}
+
       <div className="studio-draft-savebar" data-ready={savingReady ? "true" : "false"}>
         <div>
-          <strong>{savingReady ? "Save readiness for publishing" : "Save private draft"}</strong>
+          <strong>{readyBlockedByPrivateMedia ? "Keep Figure content private" : savingReady ? "Save readiness for publishing" : "Save private draft"}</strong>
           <span>
-            {savingReady
-              ? "After this save, the page reloads and Publish unlocks if preflight passes."
-              : `Lock version ${lockVersion}. Saving remains private and does not change the live Reader.`}
+            {readyBlockedByPrivateMedia
+              ? "Change Editorial state to Draft or Needs review. The selected Media IDs and where-used links will save atomically."
+              : savingReady
+                ? "After this save, the page reloads and Publish unlocks if preflight passes."
+                : `Lock version ${lockVersion}. Saving remains private and does not change the live Reader.`}
           </span>
         </div>
         <div className="studio-draft-save-actions">
           <Link href="/studio/content">Back</Link>
-          <button type="submit" disabled={isPending}>
-            {isPending ? "Saving…" : savingReady ? "Save as Ready" : "Save draft"}
+          <button type="submit" disabled={isPending || readyBlockedByPrivateMedia}>
+            {isPending ? "Saving…" : readyBlockedByPrivateMedia ? "Choose Draft to save" : savingReady ? "Save as Ready" : "Save draft"}
           </button>
         </div>
       </div>

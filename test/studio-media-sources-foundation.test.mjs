@@ -58,7 +58,12 @@ test("Phase 12A Storage boundary stages privately and exposes no browser public 
   assert.match(migration, /storage\.foldername\(name\)\)\[2\] = \(select auth\.uid\(\)\)::text/);
   assert.match(migration, /ma\.id::text = \(storage\.foldername\(name\)\)\[3\]/);
   assert.doesNotMatch(migration, /on storage\.objects for delete/);
-  assert.doesNotMatch(migration, /bucket_id = 'media-public'[\s\S]*for insert/);
+
+  const storagePolicies = migration.match(/create policy[\s\S]*?;/gi) ?? [];
+  assert.equal(
+    storagePolicies.some((policy) => /media-public/.test(policy) && /for insert/i.test(policy)),
+    false,
+  );
 });
 
 test("Phase 12A documents public metadata hardening and deferred upload workflow", async () => {

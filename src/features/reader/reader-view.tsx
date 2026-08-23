@@ -3,8 +3,9 @@ import Link from "next/link";
 
 import { getTableOfContents } from "./document-schema";
 import { ReaderControls } from "./reader-controls";
+import type { ReaderEntry } from "./reader-entry";
 import { ReaderExperience } from "./reader-experience";
-import { resolveReaderFixtureMedia, type ReaderFixture } from "./reader-fixtures";
+import { resolveReaderFixtureMedia } from "./reader-fixtures";
 import { StructuredDocumentRenderer } from "./structured-document-renderer";
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://abhidea.vercel.app";
@@ -29,29 +30,41 @@ function safeExternalUrl(value?: string): string | null {
   }
 }
 
-export function buildReaderFixtureMetadata(entry: ReaderFixture): Metadata {
+function buildReaderMetadata(entry: ReaderEntry, indexable: boolean): Metadata {
   const currentPath = `/${entry.locale}/read/${entry.slug}`;
-  const alternatePath = `/${entry.alternateLocale}/read/${entry.alternateSlug}`;
+  const languages: Record<string, string> = {
+    [entry.locale]: `${siteUrl}${currentPath}`,
+  };
+
+  if (entry.alternateSlug) {
+    const alternatePath = `/${entry.alternateLocale}/read/${entry.alternateSlug}`;
+    languages[entry.alternateLocale] = `${siteUrl}${alternatePath}`;
+  }
 
   return {
     title: entry.title,
     description: entry.summary,
     robots: {
-      index: false,
-      follow: false,
+      index: indexable,
+      follow: indexable,
     },
     alternates: {
       canonical: `${siteUrl}${currentPath}`,
-      languages: {
-        [entry.locale]: `${siteUrl}${currentPath}`,
-        [entry.alternateLocale]: `${siteUrl}${alternatePath}`,
-      },
+      languages,
     },
   };
 }
 
+export function buildReaderFixtureMetadata(entry: ReaderEntry): Metadata {
+  return buildReaderMetadata(entry, false);
+}
+
+export function buildPublishedReaderMetadata(entry: ReaderEntry): Metadata {
+  return buildReaderMetadata(entry, true);
+}
+
 type ReaderViewProps = Readonly<{
-  entry: ReaderFixture;
+  entry: ReaderEntry;
   mode?: "public" | "draft-preview";
   backHref?: string;
   previewAlternateHref?: string | null;
@@ -69,7 +82,9 @@ export function ReaderView({
   const isDraftPreview = mode === "draft-preview";
   const alternateHref = isDraftPreview
     ? previewAlternateHref
-    : `/${entry.alternateLocale}/read/${entry.alternateSlug}`;
+    : entry.alternateSlug
+      ? `/${entry.alternateLocale}/read/${entry.alternateSlug}`
+      : null;
   const typeSlug = contentTypeSlug(entry.contentType);
   const contentTypeHref = typeSlug ? `/explore/type/${typeSlug}` : "/explore";
 
@@ -144,9 +159,17 @@ export function ReaderView({
                       ? "Read in English"
                       : "हिन्दी में पढ़ें"}
                 </Link>
-              ) : isDraftPreview ? (
-                <small>{isHindi ? "English edition अभी उपलब्ध नहीं है" : "Hindi edition is not created yet"}</small>
-              ) : null}
+              ) : (
+                <small>
+                  {isDraftPreview
+                    ? isHindi
+                      ? "English edition अभी उपलब्ध नहीं है"
+                      : "Hindi edition is not created yet"
+                    : isHindi
+                      ? "English edition अभी प्रकाशित नहीं है"
+                      : "Hindi edition is not published yet"}
+                </small>
+              )}
             </aside>
             <ReaderControls locale={entry.locale} />
             {isDraftPreview ? null : <ReaderExperience locale={entry.locale} title={entry.title} />}

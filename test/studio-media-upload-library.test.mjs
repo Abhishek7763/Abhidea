@@ -27,7 +27,8 @@ test("Phase 12B keeps uploads in reserved private paths with narrow cleanup", ()
 });
 
 test("Phase 12B sends file bytes directly to signed Supabase Storage", () => {
-  assert.match(mediaService, /object\/upload\/sign\/media-private/);
+  assert.match(mediaService, /object\/upload\/sign\/\$\{bucket\}/);
+  assert.match(mediaService, /createSignedMediaUploadTicket\("media-private", storageKey\)/);
   assert.match(uploadForm, /reservation\.signedUploadUrl/);
   assert.match(uploadForm, /method: "PUT"/);
   assert.match(uploadForm, /"x-upsert": "false"/);

@@ -7,6 +7,7 @@ const navItems = [
   { href: "/studio", label: "Dashboard" },
   { href: "/studio/content", label: "Content" },
   { href: "/studio/media", label: "Media" },
+  { href: "/studio/activity", label: "Activity" },
   { href: "/studio/settings", label: "Settings" },
 ] as const;
 

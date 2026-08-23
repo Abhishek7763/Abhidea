@@ -8,11 +8,14 @@ export type StudioMediaAsset = Readonly<{
   id: string;
   originalFilename: string;
   privateStorageKey: string | null;
+  optimizedStorageKey: string | null;
   publicStorageKey: string | null;
   mimeType: string;
   byteSize: number;
+  optimizedByteSize: number | null;
   width: number | null;
   height: number | null;
+  optimizedAt: string | null;
   altText: string | null;
   caption: string | null;
   credit: string | null;
@@ -42,6 +45,13 @@ export type StudioMediaDetail = Readonly<{
 }>;
 
 export type StudioMediaUploadReservation = Readonly<{
+  mediaId: string;
+  storageKey: string;
+  signedUploadUrl: string;
+  publishableKey: string;
+}>;
+
+export type StudioMediaOptimizationReservation = Readonly<{
   mediaId: string;
   storageKey: string;
   signedUploadUrl: string;
@@ -103,6 +113,10 @@ function nullablePositiveInteger(value: unknown): number | null {
 
 function safeByteSize(value: unknown): number | null {
   return typeof value === "number" && Number.isSafeInteger(value) && value >= 0 ? value : null;
+}
+
+function nullableByteSize(value: unknown): number | null {
+  return typeof value === "number" && Number.isSafeInteger(value) && value > 0 ? value : null;
 }
 
 function getSupabaseConfig(): SupabaseConfig {
@@ -223,11 +237,14 @@ function parseAsset(value: unknown): Omit<StudioMediaAsset, "previewUrl"> | null
     id,
     originalFilename,
     privateStorageKey: nullableString(value.private_storage_key),
+    optimizedStorageKey: nullableString(value.optimized_storage_key),
     publicStorageKey: nullableString(value.public_storage_key),
     mimeType,
     byteSize,
+    optimizedByteSize: nullableByteSize(value.optimized_byte_size),
     width: nullablePositiveInteger(value.width),
     height: nullablePositiveInteger(value.height),
+    optimizedAt: nullableString(value.optimized_at),
     altText: nullableString(value.alt_text),
     caption: nullableString(value.caption),
     credit: nullableString(value.credit),
@@ -284,12 +301,16 @@ async function createSignedPreviewUrls(paths: readonly string[]): Promise<Map<st
   return previews;
 }
 
+function previewStorageKey(asset: Omit<StudioMediaAsset, "previewUrl">): string | null {
+  return asset.optimizedStorageKey ?? asset.privateStorageKey;
+}
+
 export async function loadStudioMediaLibrary(): Promise<StudioMediaLibrary> {
   const config = getSupabaseConfig();
   const endpoint = new URL(`${config.url}/rest/v1/media_assets`);
   endpoint.searchParams.set(
     "select",
-    "id,original_filename,private_storage_key,public_storage_key,mime_type,byte_size,width,height,alt_text,caption,credit,source_url,asset_state,created_at,updated_at",
+    "id,original_filename,private_storage_key,optimized_storage_key,public_storage_key,mime_type,byte_size,optimized_byte_size,width,height,optimized_at,alt_text,caption,credit,source_url,asset_state,created_at,updated_at",
   );
   endpoint.searchParams.set("order", "created_at.desc");
   endpoint.searchParams.set("limit", String(MEDIA_LIBRARY_LIMIT + 1));
@@ -298,14 +319,20 @@ export async function loadStudioMediaLibrary(): Promise<StudioMediaLibrary> {
   const parsed = rawRows.map(parseAsset).filter((item): item is NonNullable<typeof item> => item !== null);
   const isTruncated = parsed.length > MEDIA_LIBRARY_LIMIT;
   const visible = parsed.slice(0, MEDIA_LIBRARY_LIMIT);
-  const previewPaths = visible.flatMap((asset) => (asset.privateStorageKey ? [asset.privateStorageKey] : []));
+  const previewPaths = visible.flatMap((asset) => {
+    const key = previewStorageKey(asset);
+    return key ? [key] : [];
+  });
   const previews = await createSignedPreviewUrls(previewPaths);
 
   return {
-    items: visible.map((asset) => ({
-      ...asset,
-      previewUrl: asset.privateStorageKey ? (previews.get(asset.privateStorageKey) ?? null) : null,
-    })),
+    items: visible.map((asset) => {
+      const key = previewStorageKey(asset);
+      return {
+        ...asset,
+        previewUrl: key ? (previews.get(key) ?? null) : null,
+      };
+    }),
     isTruncated,
   };
 }
@@ -315,7 +342,7 @@ export async function loadStudioMediaDetail(mediaId: string): Promise<StudioMedi
   const assetEndpoint = new URL(`${config.url}/rest/v1/media_assets`);
   assetEndpoint.searchParams.set(
     "select",
-    "id,original_filename,private_storage_key,public_storage_key,mime_type,byte_size,width,height,alt_text,caption,credit,source_url,asset_state,created_at,updated_at",
+    "id,original_filename,private_storage_key,optimized_storage_key,public_storage_key,mime_type,byte_size,optimized_byte_size,width,height,optimized_at,alt_text,caption,credit,source_url,asset_state,created_at,updated_at",
   );
   assetEndpoint.searchParams.set("id", `eq.${mediaId}`);
   assetEndpoint.searchParams.set("limit", "1");
@@ -332,16 +359,52 @@ export async function loadStudioMediaDetail(mediaId: string): Promise<StudioMedi
     .map(parseUsage)
     .filter((item): item is StudioMediaUsage => item !== null);
 
-  const previews = asset.privateStorageKey
-    ? await createSignedPreviewUrls([asset.privateStorageKey])
-    : new Map<string, string>();
+  const previewKey = previewStorageKey(asset);
+  const previews = previewKey ? await createSignedPreviewUrls([previewKey]) : new Map<string, string>();
 
   return {
     asset: {
       ...asset,
-      previewUrl: asset.privateStorageKey ? (previews.get(asset.privateStorageKey) ?? null) : null,
+      previewUrl: previewKey ? (previews.get(previewKey) ?? null) : null,
     },
     usages,
+  };
+}
+
+async function createSignedMediaUploadTicket(
+  bucket: "media-private",
+  storageKey: string,
+): Promise<Readonly<{ signedUploadUrl: string; publishableKey: string }>> {
+  const config = getSupabaseConfig();
+  const accessToken = await getStudioAccessToken();
+  const response = await fetch(
+    `${config.url}/storage/v1/object/upload/sign/${bucket}/${encodeStoragePath(storageKey)}`,
+    {
+      method: "POST",
+      headers: {
+        ...apiHeaders(config, accessToken),
+        "Content-Type": "application/json",
+      },
+      body: "{}",
+      cache: "no-store",
+    },
+  );
+
+  if (!response.ok) {
+    throw await parseRequestError(response, "Could not create a private upload ticket.");
+  }
+
+  const signedPayload = (await response.json()) as unknown;
+  if (!isRecord(signedPayload) || !requiredString(signedPayload.url)) {
+    throw new Error("Storage did not return a signed upload ticket.");
+  }
+
+  const signedPath = requiredString(signedPayload.url)!;
+  return {
+    signedUploadUrl: signedPath.startsWith("http")
+      ? signedPath
+      : `${config.url}/storage/v1${signedPath.startsWith("/") ? signedPath : `/${signedPath}`}`,
+    publishableKey: config.publishableKey,
   };
 }
 
@@ -366,42 +429,19 @@ export async function reserveStudioMediaUpload(
   const storageKey = requiredString(payload[0].storage_key);
   if (!mediaId || !storageKey) throw new Error("Media reservation identity is missing.");
 
-  const config = getSupabaseConfig();
-  const accessToken = await getStudioAccessToken();
-  const response = await fetch(
-    `${config.url}/storage/v1/object/upload/sign/media-private/${encodeStoragePath(storageKey)}`,
-    {
-      method: "POST",
-      headers: {
-        ...apiHeaders(config, accessToken),
-        "Content-Type": "application/json",
-      },
-      body: "{}",
-      cache: "no-store",
-    },
-  );
-
-  if (!response.ok) {
+  let ticket;
+  try {
+    ticket = await createSignedMediaUploadTicket("media-private", storageKey);
+  } catch (error) {
     await cancelStudioMediaUpload(mediaId).catch(() => undefined);
-    throw await parseRequestError(response, "Could not create a private upload ticket.");
+    throw error;
   }
-
-  const signedPayload = (await response.json()) as unknown;
-  if (!isRecord(signedPayload) || !requiredString(signedPayload.url)) {
-    await cancelStudioMediaUpload(mediaId).catch(() => undefined);
-    throw new Error("Storage did not return a signed upload ticket.");
-  }
-
-  const signedPath = requiredString(signedPayload.url)!;
-  const signedUploadUrl = signedPath.startsWith("http")
-    ? signedPath
-    : `${config.url}/storage/v1${signedPath.startsWith("/") ? signedPath : `/${signedPath}`}`;
 
   return {
     mediaId,
     storageKey,
-    signedUploadUrl,
-    publishableKey: config.publishableKey,
+    signedUploadUrl: ticket.signedUploadUrl,
+    publishableKey: ticket.publishableKey,
   };
 }
 
@@ -431,6 +471,43 @@ export async function cancelStudioMediaUpload(mediaId: string, storageKey?: stri
   }
 
   await callStudioMediaRpc("cancel_media_upload", { p_media_id: mediaId });
+}
+
+export async function prepareStudioMediaOptimizedVariant(
+  mediaId: string,
+): Promise<StudioMediaOptimizationReservation> {
+  const payload = await callStudioMediaRpc("prepare_media_optimized_variant", {
+    p_media_id: mediaId,
+  });
+
+  if (!Array.isArray(payload) || !isRecord(payload[0])) {
+    throw new Error("Media optimization reservation returned an invalid payload.");
+  }
+
+  const storageKey = requiredString(payload[0].storage_key);
+  if (!storageKey) throw new Error("Media optimization storage identity is missing.");
+
+  const ticket = await createSignedMediaUploadTicket("media-private", storageKey);
+  return {
+    mediaId,
+    storageKey,
+    signedUploadUrl: ticket.signedUploadUrl,
+    publishableKey: ticket.publishableKey,
+  };
+}
+
+export async function finalizeStudioMediaOptimizedVariant(
+  mediaId: string,
+  storageKey: string,
+  width: number,
+  height: number,
+): Promise<void> {
+  await callStudioMediaRpc("finalize_media_optimized_variant", {
+    p_media_id: mediaId,
+    p_storage_key: storageKey,
+    p_width: width,
+    p_height: height,
+  });
 }
 
 export async function updateStudioMediaMetadata(input: StudioMediaMetadataInput): Promise<void> {

@@ -231,6 +231,8 @@ export async function publishStudioDraft(
   localizationId: string,
   expectedLockVersion: number,
 ): Promise<StudioPublishResult> {
+  await promoteStudioDraftReaderMedia(localizationId, expectedLockVersion);
+
   const { url } = getSupabaseConfig();
   const endpoint = new URL(`${url}/rest/v1/rpc/publish_content_draft`);
   const payload = await requestPublicationJson(endpoint, {

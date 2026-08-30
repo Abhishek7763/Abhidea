@@ -86,8 +86,6 @@ export function StudioEditorForm({ localizationId, lockVersion, title, slug, sum
   }
 
   const savingReady = editorialStatus === "ready";
-  const hasFigureBlocks = blocks.some((block) => block.type === "figure");
-  const readyBlockedByPrivateMedia = savingReady && hasFigureBlocks;
 
   return (
     <form className="studio-editor-form" action={formAction}>
@@ -128,15 +126,11 @@ export function StudioEditorForm({ localizationId, lockVersion, title, slug, sum
 
           <div className="studio-ready-shortcut" data-ready={savingReady ? "true" : "false"}>
             <div>
-              <strong>
-                {readyBlockedByPrivateMedia ? "Figure media is still private" : savingReady ? "Ready selected" : "Still a private draft"}
-              </strong>
+              <strong>{savingReady ? "Ready selected" : "Still a private draft"}</strong>
               <p>
-                {readyBlockedByPrivateMedia
-                  ? "Save this edition as Draft or Needs review for now. Figure publishing unlocks after the public media promotion checkpoint."
-                  : savingReady
-                    ? "Save now. After reload, Publish will be unlocked if the saved content passes preflight."
-                    : "When writing is complete, choose Ready. Nothing goes live until you separately press Publish."}
+                {savingReady
+                  ? "Save now. After reload, Publish will be unlocked if the saved content passes preflight. Figure media is promoted only when you explicitly publish."
+                  : "When writing is complete, choose Ready. Nothing goes live until you separately press Publish."}
               </p>
             </div>
             {!savingReady ? (
@@ -255,27 +249,19 @@ export function StudioEditorForm({ localizationId, lockVersion, title, slug, sum
         <FieldError message={state.fieldErrors.documentJson} />
       </section>
 
-      {readyBlockedByPrivateMedia ? (
-        <div className="studio-draft-form-error" data-kind="error" role="status">
-          Figure blocks are saved privately in Phase 12D. Choose Draft or Needs review before saving; public Figure promotion is the next checkpoint.
-        </div>
-      ) : null}
-
       <div className="studio-draft-savebar" data-ready={savingReady ? "true" : "false"}>
         <div>
-          <strong>{readyBlockedByPrivateMedia ? "Keep Figure content private" : savingReady ? "Save readiness for publishing" : "Save private draft"}</strong>
+          <strong>{savingReady ? "Save readiness for publishing" : "Save private draft"}</strong>
           <span>
-            {readyBlockedByPrivateMedia
-              ? "Change Editorial state to Draft or Needs review. The selected Media IDs and where-used links will save atomically."
-              : savingReady
-                ? "After this save, the page reloads and Publish unlocks if preflight passes."
-                : `Lock version ${lockVersion}. Saving remains private and does not change the live Reader.`}
+            {savingReady
+              ? "After this save, the page reloads and Publish unlocks if preflight passes. Figure media remains private until Publish."
+              : `Lock version ${lockVersion}. Saving remains private and does not change the live Reader.`}
           </span>
         </div>
         <div className="studio-draft-save-actions">
           <Link href="/studio/content">Back</Link>
-          <button type="submit" disabled={isPending || readyBlockedByPrivateMedia}>
-            {isPending ? "Saving…" : readyBlockedByPrivateMedia ? "Choose Draft to save" : savingReady ? "Save as Ready" : "Save draft"}
+          <button type="submit" disabled={isPending}>
+            {isPending ? "Saving…" : savingReady ? "Save as Ready" : "Save draft"}
           </button>
         </div>
       </div>

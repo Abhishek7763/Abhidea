@@ -119,6 +119,7 @@ const REVISION_BLOCK_TYPES = new Set([
   "quote",
   "list",
   "callout",
+  "figure",
   "divider",
   "closure",
 ]);

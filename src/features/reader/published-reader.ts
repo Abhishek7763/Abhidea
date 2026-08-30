@@ -4,6 +4,7 @@ import {
   parseReaderDocument,
   type ReaderBlock,
   type ReaderLocale,
+  type ReaderResolvedMedia,
 } from "./document-schema";
 import type { ReaderEntry } from "./reader-entry";
 
@@ -33,6 +34,10 @@ function requiredString(value: unknown): string | null {
   return typeof value === "string" && value.trim().length > 0 ? value.trim() : null;
 }
 
+function positiveInteger(value: unknown): number | null {
+  return typeof value === "number" && Number.isSafeInteger(value) && value > 0 ? value : null;
+}
+
 function parseSubjects(value: unknown): string[] | null {
   if (!Array.isArray(value)) return null;
 
@@ -46,6 +51,37 @@ function parseSubjects(value: unknown): string[] | null {
   return names;
 }
 
+function encodeStoragePath(path: string): string {
+  return path
+    .split("/")
+    .map((segment) => encodeURIComponent(segment))
+    .join("/");
+}
+
+function parsePublishedMedia(value: unknown): Record<string, ReaderResolvedMedia> | null {
+  if (!Array.isArray(value)) return null;
+  const { url } = getSupabaseConfig();
+  const media: Record<string, ReaderResolvedMedia> = {};
+
+  for (const item of value) {
+    if (!isRecord(item)) return null;
+    const mediaId = requiredString(item.mediaId);
+    const storageKey = requiredString(item.storageKey);
+    const width = positiveInteger(item.width);
+    const height = positiveInteger(item.height);
+    if (!mediaId || !storageKey || !width || !height || media[mediaId]) return null;
+    if (storageKey !== `reader/${mediaId}/main.webp`) return null;
+
+    media[mediaId] = {
+      src: `${url}/storage/v1/object/public/media-public/${encodeStoragePath(storageKey)}`,
+      width,
+      height,
+    };
+  }
+
+  return media;
+}
+
 function parsePublishedReaderRow(value: unknown): PublishedReaderRow | null {
   if (!isRecord(value)) return null;
 
@@ -56,6 +92,7 @@ function parsePublishedReaderRow(value: unknown): PublishedReaderRow | null {
   const summary = typeof value.summary === "string" ? value.summary : null;
   const contentTypeName = requiredString(value.content_type_name);
   const subjects = parseSubjects(value.subjects_json);
+  const media = parsePublishedMedia(value.media_json);
   const parsedBody = parseReaderDocument(value.body_json);
 
   if (
@@ -66,9 +103,18 @@ function parsePublishedReaderRow(value: unknown): PublishedReaderRow | null {
     summary === null ||
     !contentTypeName ||
     !subjects ||
+    !media ||
     !parsedBody.schemaSupported ||
     parsedBody.ignoredBlocks > 0 ||
     parsedBody.document.blocks.length === 0
+  ) {
+    return null;
+  }
+
+  if (
+    parsedBody.document.blocks.some(
+      (block) => block.type === "figure" && !media[block.mediaId],
+    )
   ) {
     return null;
   }
@@ -79,7 +125,10 @@ function parsePublishedReaderRow(value: unknown): PublishedReaderRow | null {
     slug,
     title,
     summary,
-    body: parsedBody.document,
+    body: {
+      ...parsedBody.document,
+      ...(Object.keys(media).length > 0 ? { media } : {}),
+    },
     contentTypeName,
     subjects,
   };
@@ -146,7 +195,7 @@ export async function verifyPublishedReaderSnapshot(
     const endpoint = new URL(`${url}/rest/v1/published_localizations`);
     endpoint.searchParams.set(
       "select",
-      "localization_id,revision_id,content_id,locale,slug,title,summary,body_json,subjects_json,content_type_name",
+      "localization_id,revision_id,content_id,locale,slug,title,summary,body_json,subjects_json,media_json,content_type_name",
     );
     endpoint.searchParams.set("publication_state", "eq.published");
     endpoint.searchParams.set("localization_id", `eq.${localizationId}`);
@@ -170,7 +219,7 @@ async function loadPublishedReaderEntry(locale: ReaderLocale, slug: string): Pro
   const endpoint = new URL(`${url}/rest/v1/published_localizations`);
   endpoint.searchParams.set(
     "select",
-    "content_id,locale,slug,title,summary,body_json,subjects_json,content_type_name",
+    "content_id,locale,slug,title,summary,body_json,subjects_json,media_json,content_type_name",
   );
   endpoint.searchParams.set("publication_state", "eq.published");
   endpoint.searchParams.set("locale", `eq.${locale}`);

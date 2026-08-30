@@ -2,6 +2,12 @@ export const READER_SCHEMA_VERSION = 1 as const;
 
 export type ReaderLocale = "en" | "hi";
 
+export type ReaderResolvedMedia = {
+  src: string;
+  width: number;
+  height: number;
+};
+
 export type ParagraphBlock = {
   id: string;
   type: "paragraph";
@@ -72,6 +78,7 @@ export type ReaderBlock =
 export type ReaderDocumentV1 = {
   schemaVersion: typeof READER_SCHEMA_VERSION;
   blocks: ReaderBlock[];
+  media?: Record<string, ReaderResolvedMedia>;
 };
 
 export type ParsedReaderDocument = {
@@ -92,6 +99,39 @@ function requiredString(value: unknown): string | null {
 
 function optionalString(value: unknown): string | undefined {
   return typeof value === "string" && value.trim().length > 0 ? value.trim() : undefined;
+}
+
+function positiveInteger(value: unknown): number | null {
+  return typeof value === "number" && Number.isSafeInteger(value) && value > 0 ? value : null;
+}
+
+function safeMediaSrc(value: unknown): string | null {
+  const src = requiredString(value);
+  if (!src) return null;
+  if (src.startsWith("/")) return src;
+
+  try {
+    const url = new URL(src);
+    return url.protocol === "https:" || url.protocol === "http:" ? url.toString() : null;
+  } catch {
+    return null;
+  }
+}
+
+function parseResolvedMedia(value: unknown): Record<string, ReaderResolvedMedia> | undefined {
+  if (!isRecord(value)) return undefined;
+
+  const media: Record<string, ReaderResolvedMedia> = {};
+  for (const [mediaId, item] of Object.entries(value)) {
+    if (!mediaId || !isRecord(item)) continue;
+    const src = safeMediaSrc(item.src);
+    const width = positiveInteger(item.width);
+    const height = positiveInteger(item.height);
+    if (!src || !width || !height) continue;
+    media[mediaId] = { src, width, height };
+  }
+
+  return Object.keys(media).length > 0 ? media : undefined;
 }
 
 function safeId(value: unknown, index: number): string {
@@ -200,8 +240,13 @@ export function parseReaderDocument(input: unknown): ParsedReaderDocument {
     parsedBlocks.push(uniqueId === parsed.id ? parsed : { ...parsed, id: uniqueId });
   });
 
+  const media = parseResolvedMedia(input.media);
   return {
-    document: { schemaVersion: READER_SCHEMA_VERSION, blocks: parsedBlocks },
+    document: {
+      schemaVersion: READER_SCHEMA_VERSION,
+      blocks: parsedBlocks,
+      ...(media ? { media } : {}),
+    },
     ignoredBlocks,
     schemaSupported: true,
   };

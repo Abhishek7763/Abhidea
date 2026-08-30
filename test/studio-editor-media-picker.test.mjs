@@ -41,9 +41,8 @@ test("Phase 12D refuses unoptimized Figure assets and keeps them private", () =>
   assert.doesNotMatch(migration, /media-public/);
 });
 
-test("Phase 12D blocks Ready while Figure public promotion is deferred", () => {
-  assert.match(editorForm, /readyBlockedByPrivateMedia/);
-  assert.match(editorForm, /Choose Draft to save/);
+test("Phase 12D migration deliberately deferred public Figure promotion", () => {
   assert.match(migration, /private\.is_publishable_reader_document/);
+  assert.doesNotMatch(migration, /media-public/);
   assert.doesNotMatch(migration, /create or replace function private\.is_publishable_reader_document/);
 });

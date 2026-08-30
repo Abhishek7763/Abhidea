@@ -1,12 +1,13 @@
 import Image from "next/image";
 
-import { parseReaderDocument, type FigureBlock, type ReaderLocale } from "./document-schema";
+import {
+  parseReaderDocument,
+  type FigureBlock,
+  type ReaderLocale,
+  type ReaderResolvedMedia,
+} from "./document-schema";
 
-export type ResolvedReaderMedia = {
-  src: string;
-  width: number;
-  height: number;
-};
+export type ResolvedReaderMedia = ReaderResolvedMedia;
 
 type StructuredDocumentRendererProps = Readonly<{
   document: unknown;
@@ -14,9 +15,7 @@ type StructuredDocumentRendererProps = Readonly<{
   resolveMedia: (mediaId: string) => ResolvedReaderMedia | null;
 }>;
 
-function ReaderFigure({ block, resolveMedia }: { block: FigureBlock; resolveMedia: StructuredDocumentRendererProps["resolveMedia"] }) {
-  const media = resolveMedia(block.mediaId);
-
+function ReaderFigure({ block, media }: { block: FigureBlock; media: ResolvedReaderMedia | null }) {
   if (!media) {
     return (
       <aside className="reader-block-warning" role="note">
@@ -88,7 +87,13 @@ export function StructuredDocumentRenderer({ document: input, locale, resolveMed
               </aside>
             );
           case "figure":
-            return <ReaderFigure block={block} key={block.id} resolveMedia={resolveMedia} />;
+            return (
+              <ReaderFigure
+                block={block}
+                key={block.id}
+                media={parsed.document.media?.[block.mediaId] ?? resolveMedia(block.mediaId)}
+              />
+            );
           case "divider":
             return <hr className="reader-divider" key={block.id} />;
           case "closure":
